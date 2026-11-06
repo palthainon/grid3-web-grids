@@ -34,5 +34,5 @@ Start-Process -FilePath $gridExe -ArgumentList ('"{0}"' -f $GridSet)
 
 Write-Output "Sent to Grid 3: $GridSet"
 if ($running) { Write-Output 'Grid 3 was already running; look for its import prompt there.' }
-else { Write-Output 'Grid 3 was not running and is starting; look for its import prompt.' }
+else { Write-Output 'Grid 3 was not running and is starting. Seen 2026-11-06: a file sent during startup gets no prompt. Run this again once Grid 3 is open.' }
 Write-Output 'If no prompt appears, import through Grid Explorer instead and note it in the ticket.'
