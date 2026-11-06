@@ -31,6 +31,8 @@ chime when Muse replies. It was built for, and tested by, a Grid 3 user on a Gri
   ```
 
 - **Add a site:** [docs/templates.md](docs/templates.md). AI agents: start with [AGENTS.md](AGENTS.md).
+- **Contribute:** branch from `dev` and open a pull request into `dev`. `main` is the published branch and
+  only takes pull requests from `dev`. Details in [AGENTS.md](AGENTS.md#workflow).
 
 ## Docs
 

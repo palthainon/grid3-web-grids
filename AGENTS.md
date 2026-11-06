@@ -10,6 +10,18 @@ disabilities communicate, so be careful and test before you hand anything over.
 3. [.claude/skills/site-grid/SKILL.md](.claude/skills/site-grid/SKILL.md): the build, test and live-check loop.
 4. `docs/sites/<site>.md` for the site you are changing.
 
+## Workflow
+
+- `main` is the published branch: what users download and what goes on their devices. It takes changes only
+  by pull request from `dev` (branch protection enforces this).
+- `dev` is where work starts. Make a feature branch from `dev` (in a git worktree under `.claude/worktrees/`),
+  open a PR into `dev`, and squash-merge it when the build, `check-gridset.ps1` and the tests pass.
+- To publish: open a PR from `dev` to `main` that says what changed for users and what was checked in Grid 3.
+  Merge it with a merge commit (not squash), so `dev` and `main` stay in step. Then users pull `main` and
+  reimport the `.gridset`.
+- Rebuild `grids/*.gridset` in the same PR as any change to `sites/`, `templates/` or `tools/build-site.ps1`.
+- Track each work stream in `tickets/` (one file per stream). Tickets here are public: no personal details.
+
 ## Rules
 
 - Never change the user's startup grid set (often Fast Talker) except through Grid 3's Edit mode, by a person.
