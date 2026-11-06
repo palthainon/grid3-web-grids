@@ -72,8 +72,10 @@ the message to the user's email or as a text: Grid 3 alerts for those natively.
 `site.psd1` keys: `Name` (grid name prefix), `Template`, `Include` (shared pieces from `templates/`, such as
 `alert.js`), `ScriptName` (commandid and `GridCommands` prefix),
 `Url`, `Output`, `Logo`, `ThumbnailBackground`, `AutoStart` (run the Start cell's commands when the set
-opens), `StartWait` (seconds to wait after opening the site before the loader runs), `Description`, `Ignore`, `Extra`, `Blank` (`'<grid> X,Y'`), `Edits` (change a stock cell and keep its look: `Grid`, `X`, `Y`, `Prepend` commands,
-`JumpBack` to turn its Jump.To into Jump.Back), `Cells` (each with `Grid`, `X`, `Y`,
+opens), `StartWait` (seconds to wait after opening the site before the loader runs), `Description`, `Ignore`, `Extra`, `Blank` (`'<grid> X,Y'`), `Edits` (change a stock cell and keep its look: `Grid`, `X`, `Y`, and any of `Commands`
+to replace its commands, `Prepend`, `Append`, `JumpBack` to turn its Jump.To into Jump.Back, `Span = @(cols, rows)`),
+`Imports` (grids from another stock set: `Source`, `Grids` map from source grid to short name, `Send` and `Back`
+grid lists, `DropCommands` patterns; the replaced grid's workspace cell is kept), `Cells` (each with `Grid`, `X`, `Y`,
 `Caption`, `Image`, `Style`, `Commands`).
 
 ## The two example sites
