@@ -7,7 +7,7 @@
     Output      = 'Muse.gridset'
     Logo        = 'logo.png'            # Muse squiggle, drawn for this project
     ThumbnailBackground = '#FFFFFFFF'
-    Include     = @('alert.js')         # templates\alert.js: chime and banner for new Muse replies
+    Include     = @('alert.js', 'headphone.js')  # templates\: chime and banner for new replies; reading into the headphones
     AutoStart   = $true                 # the user asked for no Start press
     StartWait   = 6                     # seconds after opening muse.ai before the script loads (slow device)
     Description = 'Muse (muse.ai) for Grid 3. Built from the Grid 3 WhatsApp grid set layout, with its own page script.'
@@ -15,7 +15,7 @@
     # WhatsApp housekeeping calls with no Muse equivalent. They are removed; the rest of the cell stays.
     Ignore = @('Home/Show_Chat_List', 'Home/Cancel_Reply_To_Message')
     # Muse functions outside the messaging contract.
-    Extra  = @('Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
+    Extra  = @('Home/Read_Selected_Message_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
                'Places/Chat', 'Places/Search', 'Places/Feed', 'Places/Ideas', 'Places/Goals', 'Places/Library', 'Places/Settings',
                'Items/Previous', 'Items/Next', 'Items/Read', 'Items/Read_All', 'Items/Open', 'Items/Close', 'Search/Leave')
 

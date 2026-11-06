@@ -262,6 +262,8 @@
     'Home/Previous_Message': () => { const list = messages(); const i = selectedIndex(list); select(list, i < 0 ? list.length - 1 : i - 1); },
     'Home/Next_Message': () => { const list = messages(); const i = selectedIndex(list); select(list, i < 0 ? list.length - 1 : i + 1); },
     'Home/Read_Selected_Message': () => clean(current()?.innerText || 'No message'),
+    // Same text into the headphones (templates/headphone.js); the cell must run WebBrowser.NextElement after it.
+    'Home/Read_Selected_Message_Headphones': () => grid3HeadphoneSay(clean(current()?.innerText || 'No message')),
     'Home/Center_Current_Message': () => { current()?.scrollIntoView({ block: 'center' }); },
     'Home/Jump_To_End_Of_Conversation': () => { const list = messages(); select(list, list.length - 1); },
     'Home/Reply_To_Message': () => { current()?.querySelector('button[aria-label="Reply"]')?.click(); },

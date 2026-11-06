@@ -96,6 +96,17 @@ try {
     check('Option_2 presses the second option and says it', (await grid3(page, 'Muse/Options/Option_2')) === 'Give me a summary' && JSON.stringify(await page.evaluate(() => window.chosen)) === '["Give me a summary"]');
     await grid3(page, 'Muse/Panel/Toggle');
     check('Panel/Toggle opens the avatar panel', await page.locator('#panel').count() === 1);
+    await grid3(page, 'Muse/Chats/Toggle');
+    await page.waitForTimeout(400); // the unpinned panel draws its rows 200 ms after the click
+    const rowsBefore = await rowCount();
+    const before = await grid3(page, 'Muse/Home/Read_Selected_Message');
+    await grid3(page, 'Muse/Home/Read_Selected_Message_Headphones');
+    check('Read in headphones gives the selected message to two new hotspot buttons',
+      await page.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b.length === 2 && b[1]._grid_getHotSpotAuditoryFeedbackText(); }) === before, before);
+    const after = { selection: (await grid3(page, 'Muse/Home/Read_Selected_Message')) === before, avatarPanel: await page.locator('#panel').count(), chatRows: await rowCount() };
+    check('Read in headphones keeps the selection, the avatar panel and the chat panel open',
+      rowsBefore === 3 && after.selection && after.avatarPanel === 1 && after.chatRows === 3, JSON.stringify({ rowsBefore, ...after }));
+    await grid3(page, 'Muse/Chats/Toggle');
     await grid3(page, 'Muse/Panel/Toggle');
     check('Panel/Toggle closes it', await page.locator('#panel').count() === 0);
     await context.close();
