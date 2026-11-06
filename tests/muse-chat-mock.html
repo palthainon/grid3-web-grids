@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!-- Stand-in for the signed-in Muse page, modelled on the real page as read 2026-11-05 and 2026-11-06
+     (docs/sites/muse.md). Layout is simplified.
+     Chat panel: by default "Keep chat panel visible" is on, so the panel is docked and no Chats button exists.
+     https://muse.ai/?unpinned starts with it off: a Chats button toggles the panel, rows are drawn 200 ms after
+     the click, and the open panel lays a cover over the messages. The side chat options menu flips the setting.
+     Option buttons are plain buttons in the newest message. The avatar panel closes with "Close panel".
+     Left rail: Chat, Search, Feed, Ideas, Goals, Library and the Settings menu, with the item markup each real
+     page uses (feed cards, idea list items, goal rows with a Mark checkbox, library links and cards, the search
+     dialog's results, the Settings dialog's sections with Log out). -->
+<html><head><meta charset="utf-8"><title>Muse mock</title>
+<style>
+  body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; }
+  #surface { width: 240px; } main { flex: 1; display: flex; flex-direction: column; }
+  #scroller { flex: 1; overflow-y: auto; } .msg { height: 140px; border-bottom: 1px solid #ccc; }
+  #cover { position: fixed; inset: 0; background: rgba(0,0,0,.3); }
+  #surface.overlay { position: fixed; left: 0; top: 0; bottom: 0; background: #fff; z-index: 2; }
+</style></head>
+<body>
+<div id="rail">
+  <a data-testid="hatch-nav-chat" aria-label="Chat" href="/" onclick="event.preventDefault(); go('/')">c</a>
+  <button data-testid="hatch-nav-search" aria-label="Search" onclick="openSearch()">s</button>
+  <div data-testid="hatch-nav-system-item-66656564" aria-label="Feed" onclick="go('/feed')">f</div>
+  <div data-testid="hatch-nav-system-item-6964656173" aria-label="Ideas" onclick="go('/ideas')">i</div>
+  <div data-testid="hatch-nav-system-item-676f616c73" aria-label="Goals" onclick="go('/goals')">g</div>
+  <div data-testid="hatch-nav-system-item-6c696272617279" aria-label="Library" onclick="go('/library/artifacts')">l</div>
+  <button data-testid="hatch-dock-more" aria-label="Settings" onclick="openMore()">m</button>
+</div>
+<div id="page"></div>
+<div id="surface" data-testid="hatch-side-chats-panel-sliding-surface">
+  <button data-testid="hatch-side-chats-options" aria-label="Side chat options" id="opts">⋯</button>
+  <nav aria-label="Side chats" id="nav"></nav>
+</div>
+<main>
+  <button data-testid="hatch-chat-switcher-trigger" id="trigger">Chats Open chat and side chats</button>
+  <div role="button" aria-label="Muse" id="avatar">Muse</div>
+  <button aria-label="Get the Muse app" id="getApp">⤓</button>
+  <div id="scroller"><div role="log" aria-label="Chat messages" id="log"></div></div>
+  <textarea aria-label="Message" id="box"></textarea>
+</main>
+<script>
+  window.opened = []; window.replied = []; window.chosen = [];
+  const CHATS = [['Main chat'], ['Weekly briefing'], ['Sports roundup', 'Channel conversation, view only']];
+  let pinned = !location.search.includes('unpinned'), open = pinned, current = 'Main chat';
+  const surface = document.getElementById('surface'), nav = document.getElementById('nav'), trigger = document.getElementById('trigger');
+  function draw() {
+    nav.innerHTML = '';
+    document.getElementById('cover')?.remove();
+    trigger.hidden = pinned;
+    surface.hidden = !open;
+    surface.classList.toggle('overlay', !pinned);
+    if (!open) return;
+    if (!pinned) { const c = document.createElement('div'); c.id = 'cover'; c.onclick = () => { open = false; draw(); }; document.body.appendChild(c); }
+    for (const [name, sub] of CHATS) {
+      const r = document.createElement('div'); r.setAttribute('role', 'button'); r.dataset.testid = 'hatch-thread-row';
+      r.textContent = name; if (sub) { const s = document.createElement('div'); s.textContent = sub; r.appendChild(s); }
+      if (name === current) r.setAttribute('aria-current', 'page');
+      r.onclick = () => { window.opened.push(name); current = name; draw(); };
+      nav.appendChild(r);
+    }
+  }
+  trigger.onclick = () => { if (open) { open = false; draw(); } else setTimeout(() => { open = true; draw(); }, 200); };
+  document.getElementById('opts').onclick = () => {
+    const menu = document.createElement('div'); menu.setAttribute('role', 'menu');
+    const item = document.createElement('div'); item.setAttribute('role', 'menuitemcheckbox');
+    item.setAttribute('aria-checked', String(pinned)); item.textContent = 'Keep chat panel visible';
+    item.onclick = () => { pinned = !pinned; menu.remove(); draw(); };
+    menu.appendChild(item); document.body.appendChild(menu);
+  };
+  draw();
+  const log = document.getElementById('log');
+  for (let i = 1; i <= 12; i++) {
+    const outer = document.createElement('div'); outer.className = 'msg';
+    const bubble = document.createElement('div'); bubble.textContent = (i % 2 ? 'You: question ' : 'Muse: answer ') + i;
+    const reply = document.createElement('button'); reply.setAttribute('aria-label', 'Reply');
+    reply.onclick = () => window.replied.push(i);
+    // As on the real page: Muse's replies have React, the user's own messages have Copy response.
+    const mark = document.createElement('button'); mark.setAttribute('aria-label', i % 2 ? 'Copy response' : 'React');
+    outer.append(bubble, reply, mark); log.appendChild(outer);
+    if (i === 12) ['Tell me more', 'Give me a summary', 'Start over'].forEach((t) => {
+      const b = document.createElement('button'); b.textContent = t; b.onclick = () => window.chosen.push(t); bubble.appendChild(b);
+    });
+  }
+  // Tests add a message as it would arrive: addMessage('Muse: hi') or addMessage('You: hi').
+  window.addMessage = (text) => {
+    const outer = document.createElement('div'); outer.className = 'msg';
+    const bubble = document.createElement('div'); bubble.textContent = text;
+    const reply = document.createElement('button'); reply.setAttribute('aria-label', 'Reply');
+    const mark = document.createElement('button'); mark.setAttribute('aria-label', text.startsWith('You') ? 'Copy response' : 'React');
+    outer.append(bubble, reply, mark); log.appendChild(outer);
+  };
+  document.getElementById('avatar').onclick = () => {
+    if (document.getElementById('panel')) return;
+    const a = document.createElement('aside'); a.id = 'panel';
+    a.innerHTML = '<button data-testid="hatch-status-panel-close" aria-label="Close panel">×</button>Avatar';
+    a.querySelector('button').onclick = () => a.remove();
+    document.body.appendChild(a);
+  };
+
+  // Rail pages. A page replaces the chat (main) until Chat is pressed.
+  window.clicked = [];
+  const pageEl = document.getElementById('page');
+  const mainEl = document.querySelector('main');
+  function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+  function track(root) { root.querySelectorAll('button,a,[role="button"]').forEach((b) => b.addEventListener('click', (e) => { if (b.tagName === 'A') e.preventDefault(); window.clicked.push((b.getAttribute('aria-label') || b.textContent).trim()); })); return root; }
+  function go(path) {
+    history.pushState({}, '', path);
+    pageEl.innerHTML = '';
+    mainEl.hidden = path !== '/';
+    if (path === '/feed') pageEl.appendChild(track(el(`<div>${['Team news', 'Box office figures'].map((t) => `<div data-testid="hatch-feed-unit"><div>${t}</div><div>3m ago</div><div><a href="https://l.meta.ai/x">Summary of ${t}.</a></div><div><button aria-label="Love"></button><button>Discuss</button></div></div>`).join('')}</div>`)));
+    if (path === '/ideas') pageEl.appendChild(track(el(`<div role="list">${['I can make dance videos', 'I can plan your evening'].map((t) => `<div role="listitem"><div><button><div>${t}</div><div>more</div></button></div></div>`).join('')}</div>`)));
+    if (path === '/goals') pageEl.appendChild(track(el(`<section>${['Weekly check-in', 'Feature tour'].map((t) => `<div><span><button role="checkbox" aria-checked="false" aria-label="Mark ${t} done"></button><button>${t}</button></span><button aria-label="Goal options"></button></div>`).join('')}</section>`)));
+    if (path === '/goals') pageEl.querySelectorAll('section span > button:not([role])').forEach((b) => b.addEventListener('click', () => openGoal(b.textContent)));
+    if (path.startsWith('/library')) pageEl.appendChild(track(el(`<div><a href="/library/artifacts?view=web">Spaces</a><a href="/library/artifacts?view=documents">Documents</a><div data-testid="hatch-library-card-motion">Card one<button aria-label="More options"></button><button></button></div></div>`)));
+  }
+  // Goal details, as a search result or a goal title opens it.
+  function openGoal(name) {
+    const d = el(`<div role="dialog"><h2>Goal details</h2><button aria-label="Close">x</button><h2>${name}</h2><p>The user said yes to ${name}.</p><div>ACTIVE</div><h2>Activity</h2><h3>YESTERDAY</h3><ul><li><div>Reminder set</div><div>Reminder set for Saturday.</div></li><li><div>Added ${name}</div><div>Already on the calendar.</div></li></ul></div>`);
+    d.querySelector('button').onclick = () => d.remove();
+    document.body.appendChild(d);
+  }
+  function openSearch() {
+    const d = track(el(`<div role="dialog" data-testid="hatch-quick-search-frame"><input data-testid="command-palette-search-input" aria-label="Search Muse"><div role="listbox">${['Main chat', 'WhatsApp'].map((t) => `<div role="option" data-testid="command-palette-item">${t}<div>preview</div></div>`).join('')}</div></div>`));
+    d.addEventListener('keydown', (e) => { if (e.key === 'Escape') d.remove(); });
+    d.querySelectorAll('[data-testid="command-palette-item"]').forEach((o) => o.addEventListener('click', () => { window.clicked.push(o.firstChild.textContent); d.remove(); go('/'); }));
+    document.body.appendChild(d); d.querySelector('input').focus();
+  }
+  function openMore() {
+    const menu = el(`<div role="menu"><div role="menuitem">Keyboard shortcuts</div><div role="menuitem">Settings Ctrl+,</div></div>`);
+    menu.lastChild.onclick = () => { menu.remove(); document.body.appendChild(track(el(`<div role="dialog"><button>General</button><button>Connectors</button><button>Log out</button><button aria-label="Close" onclick="this.parentElement.remove()">x</button></div>`))); };
+    document.body.appendChild(menu);
+  }
+</script>
+</body></html>

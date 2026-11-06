@@ -1,0 +1,12 @@
+# grid3-web-grids
+
+> Build accessible Smartbox Grid 3 grid sets (AAC software) for websites such as Muse (muse.ai), so switch,
+> eye-gaze and touch users can use a site through large cells. Includes a builder that derives a site's grid
+> set from Smartbox's stock WhatsApp or YouTube grid set, page scripts, tests, and notes on Grid 3 internals.
+
+- [README](README.md): overview and quick start
+- [AGENTS.md](AGENTS.md): rules and traps for AI agents
+- [Grid 3 internals](docs/grid3-internals.md): .gridset format, command IDs, page scripts in commandids, scanning, notifications
+- [Templates and builder](docs/templates.md): build a site grid set, site.psd1 keys, alerts, adding a site
+- [Muse page facts](docs/sites/muse.md): selectors and behaviour of muse.ai that the Muse grid set relies on
+- [Building and installing](docs/building-grids.md): build, check, import, Edit mode

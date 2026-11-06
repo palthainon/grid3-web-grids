@@ -1,0 +1,7 @@
+The files in grids/ (*.gridset) are built from Smartbox Assistive Technology's stock Grid 3 grid sets
+(WhatsApp and YouTube). They contain Smartbox's layouts, cells, styles and images, changed by this project's
+builder. That material belongs to Smartbox and is not covered by this repository's MIT licence. It is shared
+for personal, non-commercial use by Grid 3 users. If you represent Smartbox and want it removed, open an issue.
+
+The builder (tools/build-site.ps1) reads the stock grid sets from your own Grid 3 installation. This
+repository does not include them.
