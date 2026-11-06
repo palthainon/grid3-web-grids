@@ -7,7 +7,7 @@
     Output      = 'Muse.gridset'
     Logo        = 'logo.png'            # Muse squiggle, drawn for this project
     ThumbnailBackground = '#FFFFFFFF'
-    Include     = @('alert.js')         # templates\alert.js: chime and banner for new Muse replies
+    Include     = @('alert.js', 'headphone.js')  # templates\: chime and banner for new replies; reading into the headphones
     AutoStart   = $true                 # the user asked for no Start press
     StartWait   = 6                     # seconds after opening muse.ai before the script loads (slow device)
     Description = 'Muse (muse.ai) for Grid 3. Built from the Grid 3 WhatsApp grid set layout, with its own page script.'
@@ -15,7 +15,7 @@
     # WhatsApp housekeeping calls with no Muse equivalent. They are removed; the rest of the cell stays.
     Ignore = @('Home/Show_Chat_List', 'Home/Cancel_Reply_To_Message')
     # Muse functions outside the messaging contract.
-    Extra  = @('Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
+    Extra  = @('Home/Read_Selected_Message_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
                'Places/Chat', 'Places/Search', 'Places/Feed', 'Places/Ideas', 'Places/Goals', 'Places/Library', 'Places/Settings',
                'Items/Previous', 'Items/Next', 'Items/Read', 'Items/Read_All', 'Items/Open', 'Items/Close', 'Search/Leave')
 
@@ -70,6 +70,13 @@
         # Fix (AI spelling correction), as on the user's email keyboard. Navigation's blue matches its colour there.
         @{ Grid = 'Keyboard'; X = 7; Y = 2; Caption = 'Fix'; Style = 'Navigation category style'
            Commands = @(@{ ID = 'Prediction.CorrectionTool' }) }
+        # Read msg into the headphones (templates\headphone.js): the click lands silently, then NextElement speaks it
+        # with the audio feedback voice. It replaced Emojis, which moved to More Tools in place of Zoom out (operator, 2026-11-06).
+        @{ Grid = 'Home'; X = 9; Y = 3; Caption = 'Read in headphones'; Style = 'style 2'; Image = '[GRID3X]ear.wmf'
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Read_Selected_Message_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
+        @{ Grid = 'More Tools'; X = 9; Y = 2; Caption = 'Emojis'; Image = '[GRID3X]heart.wmf'
+           Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Focus_Message_Input' }, @{ ID = 'Jump.To'; grid = 'Muse - Emoji' }) }
         @{ Grid = 'Home'; X = 9; Y = 2; Caption = 'Read options'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Read' }) }
         @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Option 1'; Style = 'style 2'

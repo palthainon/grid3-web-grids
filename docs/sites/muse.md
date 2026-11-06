@@ -89,6 +89,10 @@ Second check, later that day, after the operator's Grid 3 test (chat panel stuck
 First check:
 
 - Read msg reads the newest message. Prev msg moves up one and outlines it.
+- `Muse/Home/Read_Selected_Message_Headphones` gives the same text to `templates/headphone.js`, so Grid 3 reads it with
+  the audio feedback voice (headphones). Its cell must run `CommandExecution.Wait` (1 s) and `WebBrowser.NextElement`
+  after it. In the mock, the hidden click kept the selection and both panels. Home's "Read in headphones" cell (9,3)
+  carries it. It replaced Emojis, which moved to More Tools in place of Zoom out (2026-11-06). Not tried on muse.ai.
 - Read options said "1, Add both. 2, Add only the weekly schedule. 3, Leave the folder as it is."
 - Next chat opened the panel, picked the next chat, closed the panel, and Read chat named it. Prev chat went
   back. The page was left on Main chat.

@@ -19,13 +19,20 @@ work:
      note: "Alerts outside a site: have the service email or text the user, which Grid 3 alerts for natively. Untested"}
   - {n: 4, name: more-sites, state: open, owner: maintainer,
      note: "Add sites with the messaging or media template (docs/templates.md)"}
-  - {n: 6, name: email-keyboard-check, state: open, owner: maintainer,
-     note: "In Grid 3 on muse.ai: check Fix, Del word, and Tools (Select all, Copy, Paste, cursor moves) act on the message box"}
+  - {n: 6, name: email-keyboard-check, state: done, date: 2026-11-06, owner: maintainer,
+     note: "The email-style keyboard is in use in Grid 3 on the user's device and works for them"}
   - {n: 5, name: library-documents, state: open, owner: maintainer,
      note: "Muse Library documents opened in a viewer that stayed on a spinner in Chrome; reading them is untested"}
+  - {n: 7, name: headphone-reading, state: open, owner: maintainer,
+     note: "Read long text in the audio feedback voice (headphones) so the room does not hear it. templates/headphone.js passes tests/test-headphone.mjs. Import grids/Headphone Test.gridset and press cells 1-4 to hear which device each uses. Then use it for Muse Read msg"}
 ```
 
 ## Status
+
+- 2026-11-06 (later, 3): A web page can speak through Grid 3's audio feedback voice (docs/grid3-internals.md,
+  "Speaking to the headphones"). Built `grids/Headphone Test.gridset` to hear it on a device. Not yet heard in Grid 3.
+
+- 2026-11-06 (later, 2): The email-style keyboard is in use in Grid 3 on the user's device, and the user is happy with it.
 
 - 2026-11-06 (later): The Muse keyboard now follows the user's email keyboard: imported from Smartbox's stock
   Email set (new builder key `Imports`), plus Fix and fast typing on space as on the user's copy, letters in
