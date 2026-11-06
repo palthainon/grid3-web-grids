@@ -51,6 +51,14 @@ Search box: an empty search closes with one Escape on the box (the animation tak
 keyboard's Back runs `Search/Leave`, which closes an empty search, then Jump.Back returns to More. A typed
 search stays open for Next item and Open item. Seen in Chrome 2026-11-06.
 
+Keyboard (2026-11-06): follows the user's email keyboard. It is imported from Smartbox's stock Email set
+(`Email message`, `Email message tools`, `Email message punctuation`), with Muse's browser in place of the email
+editor, plus Fix (AI spelling correction) at column 7, row 2 and fast typing on the space bar, as on the user's
+copy. Letters are scan group 2. Send presses Enter; Back closes an empty search and returns. Clear selects all
+and deletes. Tools: Select all, Copy, Paste, Left, Right, Previous and Next word, Start and End of text.
+Dropped from the old WhatsApp keyboard: Quick msg and Emojis (Emojis is still on Home). Untested in a web page:
+Fix, Del word and the Tools commands (Grid 3 `Action.*` text commands; Del letter already worked).
+
 Switch scan groups on Home (2026-11-06): group 1 messages (Read msg, Prev msg, Reply, Next msg, Read options,
 Type, Emojis, Option 1, Option 2, Option 3), group 2 the chat column, group 3 Fast Talker, Rest and More.
 The user mostly stays in Main chat, so messages come first.

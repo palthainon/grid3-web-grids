@@ -126,6 +126,83 @@ function Get-CallId($id) {
 $loaderId = "_;function`tGridCommands(){};if($cache`_v!=='$version'){var`t__g3s=decodeURIComponent('$encodedScript');(0,eval)(__g3s);" +
     "try{$store=__g3s}catch(e){};$cache=GridCommands.$scriptName;$cache`_v='$version'};GridCommands.$scriptName=$cache;GridCommands.$scriptName.Load"
 
+# Imports: grids from another stock grid set (such as Smartbox's Email keyboard) replace or add template grids.
+# Each import names its Source and a Grids map (source grid -> short grid name here). Jumps to grids in the map
+# follow it; jumps to a Send grid become Enter then Jump.Back; jumps to a Back grid become Jump.Back. A cell
+# that jumps anywhere else, or has a command matching DropCommands, is removed. The workspace cell comes from
+# the template grid being replaced (the site's browser in place of the email editor). The styles the grids use
+# come along; a name that clashes with a different template style gets " (import)" added.
+$gridsDir = Join-Path $work 'Grids'
+$prefix = $template.GridPrefix
+$stylesPath = Join-Path $work 'Settings0\Styles\styles.xml'
+[xml]$styleDoc = Get-Content -Raw $stylesPath
+foreach ($import in @($config.Imports | Where-Object { $_ })) {
+    $src = Join-Path ([IO.Path]::GetTempPath()) "smartbox-import-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+    [IO.Compression.ZipFile]::ExtractToDirectory($import.Source, $src)
+    [xml]$srcStyles = Get-Content -Raw (Join-Path $src 'Settings0\Styles\styles.xml')
+    $styleRename = @{}
+    $importWorkspace = $null
+    # Replace grids first that have a template counterpart, so their workspace can serve the new ones too.
+    $order = @($import.Grids.Keys | Sort-Object { -not (Test-Path -LiteralPath (Join-Path $gridsDir "$prefix - $($import.Grids[$_])")) })
+    foreach ($sourceGrid in $order) {
+        $targetDir = Join-Path $gridsDir "$prefix - $($import.Grids[$sourceGrid])"
+        $workspace = $null
+        if (Test-Path -LiteralPath $targetDir) {
+            [xml]$replacedGrid = Get-Content -Raw -LiteralPath (Join-Path $targetDir 'grid.xml')
+            $workspace = $replacedGrid.SelectSingleNode("//Cell[Content/ContentType='Workspace']")
+            Remove-Item -Recurse -LiteralPath $targetDir
+        }
+        if ($workspace) { $importWorkspace = $workspace } else { $workspace = $importWorkspace }
+        Copy-Item -Recurse -LiteralPath (Join-Path $src "Grids\$sourceGrid") $targetDir
+        $path = Join-Path $targetDir 'grid.xml'
+        [xml]$doc = Get-Content -Raw -LiteralPath $path
+        $cellsNode = $doc.DocumentElement.SelectSingleNode('Cells')
+        $theirs = $doc.SelectSingleNode("//Cell[Content/ContentType='Workspace']")
+        if ($theirs -and $workspace) { [void]$cellsNode.ReplaceChild($doc.ImportNode($workspace, $true), $theirs) }
+        foreach ($cell in @($cellsNode.SelectNodes('Cell'))) {
+            $drop = $false
+            foreach ($command in @($cell.SelectNodes('Content/Commands/Command'))) {
+                if (@($import.DropCommands | Where-Object { $command.ID -like $_ }).Count) { $drop = $true; break }
+                if ($command.ID -ne 'Jump.To') { continue }
+                $param = $command.SelectSingleNode("Parameter[@Key='grid']")
+                if ($import.Grids.ContainsKey($param.InnerText)) { $param.InnerText = "$prefix - $($import.Grids[$param.InnerText])" }
+                elseif ($param.InnerText -in @($import.Send)) {
+                    $enter = $doc.CreateElement('Command'); $enter.SetAttribute('ID', 'ComputerControl.Keyboard')
+                    $key = $enter.AppendChild($doc.CreateElement('Parameter')); $key.SetAttribute('Key', 'keystring'); $key.InnerText = '{ENTER}'
+                    [void]$command.ParentNode.InsertBefore($enter, $command)
+                    $back = $doc.CreateElement('Command'); $back.SetAttribute('ID', 'Jump.Back'); [void]$command.ParentNode.ReplaceChild($back, $command)
+                }
+                elseif ($param.InnerText -in @($import.Back)) {
+                    $back = $doc.CreateElement('Command'); $back.SetAttribute('ID', 'Jump.Back'); [void]$command.ParentNode.ReplaceChild($back, $command)
+                }
+                else { $drop = $true; break }
+            }
+            if ($drop) { [void]$cellsNode.RemoveChild($cell) }
+        }
+        foreach ($based in @($doc.SelectNodes('//BasedOnStyle'))) {
+            $key = $based.InnerText
+            if (-not $styleRename.ContainsKey($key)) {
+                $theirStyle = $srcStyles.SelectSingleNode("//Style[@Key=`"$key`"]")
+                $ourStyle = $styleDoc.SelectSingleNode("//Style[@Key=`"$key`"]")
+                $styleRename[$key] = $key
+                if ($theirStyle -and -not $ourStyle) {
+                    [void]$styleDoc.DocumentElement.SelectSingleNode('Styles').AppendChild($styleDoc.ImportNode($theirStyle, $true))
+                } elseif ($theirStyle -and $ourStyle.OuterXml -ne $theirStyle.OuterXml) {
+                    $styleRename[$key] = "$key (import)"
+                    if (-not $styleDoc.SelectSingleNode("//Style[@Key=`"$key (import)`"]")) {
+                        $copy = $styleDoc.ImportNode($theirStyle, $true); $copy.SetAttribute('Key', "$key (import)")
+                        [void]$styleDoc.DocumentElement.SelectSingleNode('Styles').AppendChild($copy)
+                    }
+                }
+            }
+            $based.InnerText = $styleRename[$key]
+        }
+        Save-Xml $doc $path
+    }
+    Remove-Item -Recurse $src
+}
+Save-Xml $styleDoc $stylesPath
+
 # Rename grids: "WhatsApp - Home" becomes "Muse - Home". (WhatsApp's Info 3 grid has two spaces.)
 $gridsDir = Join-Path $work 'Grids'
 $rename = @{}
@@ -176,14 +253,31 @@ foreach ($folder in Get-ChildItem $gridsDir -Directory) {
         }
     }
 
-    # Edits keep a stock cell's caption, image and style: Prepend adds commands before its own, and JumpBack
-    # turns its Jump.To into Jump.Back (back to whichever grid opened this one).
+    # Edits keep a stock cell's caption, image and style: Commands replaces its commands, Prepend and Append add
+    # before or after its own, JumpBack turns its Jump.To into Jump.Back (back to whichever grid opened this
+    # one), and Span = @(columns, rows) resizes it.
     foreach ($edit in @($config.Edits | Where-Object { $_.Grid -eq $short })) {
         $target = Get-CellAt $cells $edit.X $edit.Y
         if (-not $target) { throw "No cell at $short $($edit.X),$($edit.Y) to edit." }
         $list = $target.SelectSingleNode('Content/Commands')
+        if (-not $list) { $list = $target.SelectSingleNode('Content').PrependChild($grid.CreateElement('Commands')) }
+        if ($edit.Commands) { $list.RemoveAll() }
+        foreach ($command in @($edit.Commands) + @($edit.Append) | Where-Object { $_ }) {
+            $node = $list.AppendChild($grid.CreateElement('Command'))
+            $node.SetAttribute('ID', $command.ID)
+            foreach ($key in @($command.Keys | Where-Object { $_ -ne 'ID' } | Sort-Object)) {
+                $parameter = $node.AppendChild($grid.CreateElement('Parameter'))
+                $parameter.SetAttribute('Key', $key)
+                $parameter.InnerText = $command[$key]
+            }
+        }
+        if ($edit.Span) {
+            foreach ($pair in @(@('ColumnSpan', $edit.Span[0]), @('RowSpan', $edit.Span[1]))) {
+                if ($pair[1] -le 1) { $target.RemoveAttribute($pair[0]) } else { $target.SetAttribute($pair[0], "$($pair[1])") }
+            }
+        }
         $first = $list.FirstChild
-        foreach ($command in @($edit.Prepend)) {
+        foreach ($command in @($edit.Prepend | Where-Object { $_ })) {
             $node = $grid.CreateElement('Command')
             $node.SetAttribute('ID', $command.ID)
             foreach ($key in @($command.Keys | Where-Object { $_ -ne 'ID' } | Sort-Object)) {
