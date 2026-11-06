@@ -70,16 +70,21 @@ Grid 3 has two voices: the speaking voice (Settings > Speech, the main speaker) 
 
 - Only `Speech.SpeakNow` and `Speech.ReadCell` let a cell choose the audio feedback voice. Both speak fixed text
   (the parameter, or the cell's caption). Email, SMS, clipboard and `SpeakJavascriptFunction` use the speaking voice.
-- **A web page can reach the audio feedback voice.** When Grid 3's web hotspot cursor moves, it speaks
+- **A web page can reach the audio feedback voice.** When `WebBrowser.NextElement`, `PreviousElement` or a
+  spatial move changes Grid 3's web hotspot cursor (`MoveElementAsync`), Grid 3 speaks
   `element._grid_getHotSpotAuditoryFeedbackText()` with `usePrivateVoice` true, if the user setting
-  `WebBrowserSettings.SpeakLinks` is on (default on). Grid 3's injected page script sends `onDomClick` for any
-  click, and `WebBrowserContainer.OnDomClick` moves the cursor to the first hotspot in the clicked element's chunk.
-- `templates/headphone.js` uses this: `grid3HeadphoneSay(text)` adds a 2-pixel button in its own
-  `data-grid-chunk` box, gives it a `_grid_getHotSpotAuditoryFeedbackText` that returns the text, and clicks it.
-  A new button each time, because Grid 3 speaks only when the hotspot changes.
+  `WebBrowserSettings.SpeakLinks` is on (default on).
+- A click on the page also moves the cursor (Grid 3's injected script sends `onDomClick`, and the cursor goes to
+  the first hotspot in the clicked element's chunk), but **without speech**. Seen 2026-11-06 in Grid 3 3.0.104:
+  a click alone was silent.
+- `templates/headphone.js` uses both: `grid3HeadphoneSay(text)` adds two 2-pixel buttons in their own
+  `data-grid-chunk` box and clicks the first. The cell then waits 1 s and runs `WebBrowser.NextElement`, which
+  lands on the second button, whose `_grid_getHotSpotAuditoryFeedbackText` returns the text. New buttons each time,
+  because Grid 3 speaks only when the hotspot changes.
 - Tested by `node tests	est-headphone.mjs` with Grid 3's own page script, loaded from the local install.
-  **Not yet heard in Grid 3.** `grids/Headphone Test.gridset` is the check: cells 1 to 4 each say which device
-  they should play on. Grid 3 3.0.93 may differ: this was read from 3.0.104.
+  `grids/Headphone Test.gridset` is the check on a device: each cell says which device it should play on.
+  Seen 2026-11-06 on a test machine (3.0.104): `SpeakNow` with and without the audio feedback voice played on the
+  right devices. The two-button route is not yet heard. Grid 3 3.0.93 may differ.
 
 ### Page scripts in commandids (Grid 3 3.0.93, read 2026-11-06)
 
