@@ -13,7 +13,8 @@ disabilities communicate, so be careful and test before you hand anything over.
 ## Workflow
 
 - `main` is the published branch: what users download and what goes on their devices. It takes changes only
-  by pull request from `dev` (branch protection enforces this).
+  by pull request from `dev`. Branch protection blocks direct pushes to `main`; that the PR comes from `dev`
+  is our rule.
 - `dev` is where work starts. Make a feature branch from `dev` (in a git worktree under `.claude/worktrees/`),
   open a PR into `dev`, and squash-merge it when the build, `check-gridset.ps1` and the tests pass.
 - To publish: open a PR from `dev` to `main` that says what changed for users and what was checked in Grid 3.
