@@ -2,7 +2,13 @@
 # the audio feedback voice (headphones) or the speaking voice (main speaker). Import it, press each cell, listen.
 # Cell 3 runs templates\headphone.js on example.com, the route a site grid set can use for long text. Cell 5 is
 # Grid 3's own link cursor, which should speak each link in the headphones.
-# Usage: pwsh -File tools\build-headphone-test.ps1
+# The Switch page moves the speaking voice to -Headphones, speaks, then back to -Speaker (Grid 3 device names,
+# as listed in Settings > Speech). Grid 3 reads the device when speech starts, so the switch back waits 1.5 s.
+# Usage: pwsh -File tools\build-headphone-test.ps1 [-Speaker '<name>'] [-Headphones '<name>']
+param(
+    [string]$Speaker = 'Speakers (Realtek(R) Audio)',
+    [string]$Headphones = 'Headset Earphone (Poly Blackwire 3310 Series)'
+)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $root = Split-Path $PSScriptRoot -Parent
@@ -26,6 +32,12 @@ function Script($id, $source) {
     $call = "_;function`tGridCommands(){};GridCommands._=function(){return(0,eval)(decodeURIComponent('$encoded'))};GridCommands._"
     "<Command ID=`"WebBrowser.$id`">$(Param 'commandid' $call)</Command>"
 }
+# Grid 3's audio-device auto-content command, usable in a plain cell: it sets the speaking voice's device and saves the user.
+function Device($device) { "<Command ID=`"internal.changeaudiodeviceautocontentcell`">$(Param 'indicatorenabled' 0)$(Param 'audio device' $device)</Command>" }
+function Pause($time) { "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' $time)$(Param 'cancellable' 0)</Command>" }
+function WebCell($x, $y, $caption, $url) {
+    Cell $x $y $caption @("<Command ID=`"Jump.To`">$(Param 'grid' $webGrid)</Command>", "<Command ID=`"WebBrowser.NavigateUrl`">$(Param 'url' $url)</Command>")
+}
 function Cell($x, $y, $caption, $commands) {
     "<Cell X=`"$x`" Y=`"$y`"><Content><Commands>$($commands -join '')</Commands>" +
     "<CaptionAndImage><Caption>$(Escape $caption)</Caption></CaptionAndImage>" +
@@ -40,6 +52,7 @@ function Grid($gridName, $columns, $rows, $cells) {
 }
 
 $homeGrid = "$name - Home"
+$switchGrid = "$name - Switch"
 $webGrid = "$name - Web"
 $headphone = Get-Content (Join-Path $root 'templates\headphone.js') -Raw
 $web3 = 'Test three. If you hear this in your headphones, a web page can read long text to you privately.'
@@ -53,8 +66,22 @@ $grids = [ordered]@{
             "<Command ID=`"WebBrowser.NavigateUrl`">$(Param 'url' 'https://example.com/')</Command>",
             "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' '00:00:04.0000000')$(Param 'cancellable' 1)</Command>")
         Cell 0 2 'Stop speaking' @('<Command ID="Speech.Stop" />')
+        Cell 1 2 'Switch test' @("<Command ID=`"Jump.To`">$(Param 'grid' $switchGrid)</Command>")
+        # Sign-in checks for web mail and texts in Grid 3's browser. A person signs in; agents never enter passwords.
+        (WebCell 0 1 'Gmail sign-in' 'https://mail.google.com/')
+        (WebCell 1 1 'Outlook sign-in' 'https://outlook.live.com/mail/')
+        (WebCell 2 1 'Google Messages' 'https://messages.google.com/web')
         # Jump.Home only reaches this set's own start grid; Grid Explorer is the way out of the set.
         Cell 3 0 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+    )
+    $switchGrid = Grid $switchGrid 4 3 @(
+        Cell 0 0 '6 Switch read (headphones)' @((Device $Headphones), (SpeakNow 'Test six. This uses the speaking voice, moved to your headphones for this reading only.' 0), (Pause '00:00:01.5000000'), (Device $Speaker))
+        Cell 1 0 '7 Long switch read (headphones)' @((Device $Headphones), (SpeakNow 'Test seven, part one. This long text checks whether Grid 3 keeps a long reading in the headphones after it switches back. Part two. If you hear this part on the main speaker, Grid 3 chose the device again for each piece of text. Part three. The email and text message readings are long, so this matters. Part four. Last part. If all four parts were in the headphones, the switch cell works for long messages.' 0), (Pause '00:00:01.5000000'), (Device $Speaker))
+        Cell 2 0 '8 Speaker check' @(SpeakNow 'Test eight. After a switch reading, this should come from the main speaker.' 0)
+        Cell 3 0 'Stop speaking' @('<Command ID="Speech.Stop" />')
+        Cell 0 2 'Reset to speaker' @((Device $Speaker), (SpeakNow 'Speech is on the main speaker.' 0))
+        Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
+        Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
     $webGrid = Grid $webGrid 6 4 @(
         '<Cell ColumnSpan="6" RowSpan="3"><Content><ContentType>Workspace</ContentType><ContentSubType>WebBrowser</ContentSubType>' +
