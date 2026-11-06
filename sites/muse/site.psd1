@@ -70,6 +70,13 @@
         # Fix (AI spelling correction), as on the user's email keyboard. Navigation's blue matches its colour there.
         @{ Grid = 'Keyboard'; X = 7; Y = 2; Caption = 'Fix'; Style = 'Navigation category style'
            Commands = @(@{ ID = 'Prediction.CorrectionTool' }) }
+        # Read msg into the headphones (templates\headphone.js): the click lands silently, then NextElement speaks it
+        # with the audio feedback voice. It replaced Emojis, which moved to More Tools in place of Zoom out (operator, 2026-11-06).
+        @{ Grid = 'Home'; X = 9; Y = 3; Caption = 'Read in headphones'; Style = 'style 2'; Image = '[GRID3X]ear.wmf'
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Read_Selected_Message_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
+        @{ Grid = 'More Tools'; X = 9; Y = 2; Caption = 'Emojis'; Image = '[GRID3X]heart.wmf'
+           Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Focus_Message_Input' }, @{ ID = 'Jump.To'; grid = 'Muse - Emoji' }) }
         @{ Grid = 'Home'; X = 9; Y = 2; Caption = 'Read options'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Read' }) }
         @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Option 1'; Style = 'style 2'
