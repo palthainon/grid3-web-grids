@@ -24,6 +24,8 @@
 
     # Switch scan groups on Home: group 1 is messages (most used), 2 the chat column, 3 Fast Talker, Rest and More.
     ScanBlocks = @{
+        # Keyboard letters, digits key and full stop in group 2, as on the user's email keyboard.
+        'Keyboard' = @{ '0,3' = 2; '1,3' = 2; '2,3' = 2; '3,3' = 2; '4,3' = 2; '5,3' = 2; '6,3' = 2; '7,3' = 2; '8,3' = 2; '9,3' = 2; '0,4' = 2; '1,4' = 2; '2,4' = 2; '3,4' = 2; '4,4' = 2; '5,4' = 2; '6,4' = 2; '7,4' = 2; '8,4' = 2; '9,4' = 2; '0,5' = 2; '1,5' = 2; '2,5' = 2; '3,5' = 2; '4,5' = 2; '6,5' = 2; '7,5' = 2; '8,5' = 2; '9,5' = 2 }
         'Home' = @{ '0,1' = 2; '0,2' = 2; '0,3' = 2; '0,4' = 2; '0,5' = 2; '0,0' = 3; '9,0' = 3; '9,5' = 3 }
     }
 
@@ -32,6 +34,24 @@
     Edits = @(
         @{ Grid = 'Keyboard'; X = 0; Y = 0; JumpBack = $true; Prepend = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Search/Leave' }) }
         @{ Grid = 'Keyboard'; X = 9; Y = 1; JumpBack = $true; Prepend = @() }
+        # The email keyboard's Clear empties Grid 3's own editor; in a web page select all and delete instead.
+        @{ Grid = 'Keyboard'; X = 0; Y = 2; Commands = @(@{ ID = 'ComputerControl.Keyboard'; keystring = '{LEFTCONTROL}a{DELETE}' }) }
+        @{ Grid = 'Keyboard - Punctuation'; X = 0; Y = 2; Commands = @(@{ ID = 'ComputerControl.Keyboard'; keystring = '{LEFTCONTROL}a{DELETE}' }) }
+        # As on the user's email keyboard: the third prediction is one cell wide, to make room for Fix, and the
+        # space bar also supports fast typing.
+        @{ Grid = 'Keyboard'; X = 6; Y = 2; Span = @(1, 1) }
+        @{ Grid = 'Keyboard'; X = 4; Y = 5; Append = @(@{ ID = 'Settings.FastTypingDwell' }) }
+    )
+
+    # The keyboard follows the user's email keyboard: Smartbox's stock Email set (every Grid 3 install has it),
+    # with Muse's browser in place of the email editor. Its Tools grid has Copy, Paste, Select all and cursor
+    # moves. Send presses Enter; Back returns to the grid that opened the keyboard.
+    Imports = @(
+        @{ Source = 'C:\Program Files (x86)\Smartbox\Grid 3\Locale\en-US\gridsets\Accessible Apps\Email.gridset'
+           Grids  = @{ 'Email message' = 'Keyboard'; 'Email message tools' = 'Keyboard - Tools'; 'Email message punctuation' = 'Keyboard - Punctuation' }
+           Send   = @('Email message confirm')
+           Back   = @('Email recipients')
+           DropCommands = @('Email.*', 'Action.Print', 'Action.UndoClear') }
     )
 
     # Column 0 of Home: Prev chat and Next chat move an outline over the chats, Select chat opens the outlined
@@ -47,6 +67,9 @@
            Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Chats/Toggle' }) }
         @{ Grid = 'Home'; X = 0; Y = 5; Caption = 'Muse panel'; Style = 'style 2'
            Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Panel/Toggle' }) }
+        # Fix (AI spelling correction), as on the user's email keyboard. Navigation's blue matches its colour there.
+        @{ Grid = 'Keyboard'; X = 7; Y = 2; Caption = 'Fix'; Style = 'Navigation category style'
+           Commands = @(@{ ID = 'Prediction.CorrectionTool' }) }
         @{ Grid = 'Home'; X = 9; Y = 2; Caption = 'Read options'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Read' }) }
         @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Option 1'; Style = 'style 2'

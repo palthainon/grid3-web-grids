@@ -19,11 +19,17 @@ work:
      note: "Alerts outside a site: have the service email or text the user, which Grid 3 alerts for natively. Untested"}
   - {n: 4, name: more-sites, state: open, owner: maintainer,
      note: "Add sites with the messaging or media template (docs/templates.md)"}
+  - {n: 6, name: email-keyboard-check, state: open, owner: maintainer,
+     note: "In Grid 3 on muse.ai: check Fix, Del word, and Tools (Select all, Copy, Paste, cursor moves) act on the message box"}
   - {n: 5, name: library-documents, state: open, owner: maintainer,
      note: "Muse Library documents opened in a viewer that stayed on a spinner in Chrome; reading them is untested"}
 ```
 
 ## Status
+
+- 2026-11-06 (later): The Muse keyboard now follows the user's email keyboard: imported from Smartbox's stock
+  Email set (new builder key `Imports`), plus Fix and fast typing on space as on the user's copy, letters in
+  scan group 2. Untested in Grid 3: Fix, Del word and the Tools commands typing into a web page.
 
 - 2026-11-06: Repo published from a private working repo with fresh history. Muse grid set tested in Grid 3
   by its user (messages, chats, options, rail pages, feed reading, search, alert). Branches: `dev` for work,
