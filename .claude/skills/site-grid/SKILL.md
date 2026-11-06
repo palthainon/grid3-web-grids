@@ -23,7 +23,7 @@ Background: `docs/templates.md` (how the builder works), `docs/grid3-internals.m
    test to Grid 3 that runs here.
 4. Check on the live site (see below). Mock tests alone have missed real-page behaviour twice.
 5. Update `docs/sites/<site>.md` with what you saw and the date. Update the ticket and write a retro.
-6. PR into `dev` and merge. To publish, PR `dev` into `main`. Then the operator imports `grids\<Output>`
+6. PR into `dev` and merge. To publish, PR `dev` into `main`, squash-merge it, then merge `main` back into `dev` (AGENTS.md). Then the operator imports `grids\<Output>`
    and presses the cells.
 
 ## Check on the live site
