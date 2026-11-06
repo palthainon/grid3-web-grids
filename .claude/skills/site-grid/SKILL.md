@@ -10,7 +10,7 @@ Background: `docs/templates.md` (how the builder works), `docs/grid3-internals.m
 
 ## Loop
 
-1. Work in a worktree. Change `sites/<site>/page.js` or `site.psd1`.
+1. Work in a worktree on a feature branch from `dev`. Change `sites/<site>/page.js` or `site.psd1`.
 2. If you change what the script expects from the page, change `tests/muse-chat-mock.html` (or the site's
    mock) to match the real page, and add a check to `tests/test-site-scripts.mjs`.
 3. Build and check:
@@ -23,7 +23,8 @@ Background: `docs/templates.md` (how the builder works), `docs/grid3-internals.m
    test to Grid 3 that runs here.
 4. Check on the live site (see below). Mock tests alone have missed real-page behaviour twice.
 5. Update `docs/sites/<site>.md` with what you saw and the date. Update the ticket and write a retro.
-6. Merge, then the operator imports `grids\<Output>` and presses the cells.
+6. PR into `dev` and merge. To publish, PR `dev` into `main`. Then the operator imports `grids\<Output>`
+   and presses the cells.
 
 ## Check on the live site
 
