@@ -53,10 +53,11 @@ $grids = [ordered]@{
             "<Command ID=`"WebBrowser.NavigateUrl`">$(Param 'url' 'https://example.com/')</Command>",
             "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' '00:00:04.0000000')$(Param 'cancellable' 1)</Command>")
         Cell 0 2 'Stop speaking' @('<Command ID="Speech.Stop" />')
-        Cell 3 2 'Grid Explorer' @('<Command ID="Settings.GridExplorer" />')
+        # Jump.Home only reaches this set's own start grid; Grid Explorer is the way out of the set.
+        Cell 3 0 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
-    $webGrid = Grid $webGrid 5 4 @(
-        '<Cell ColumnSpan="5" RowSpan="3"><Content><ContentType>Workspace</ContentType><ContentSubType>WebBrowser</ContentSubType>' +
+    $webGrid = Grid $webGrid 6 4 @(
+        '<Cell ColumnSpan="6" RowSpan="3"><Content><ContentType>Workspace</ContentType><ContentSubType>WebBrowser</ContentSubType>' +
             '<Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>'
         # The click is async in Grid 3 (onDomClick message), so wait before NextElement moves on from it.
         Cell 0 3 '3 Web headphones' @((Script 'ExecuteJavaScript' "$headphone`ngrid3HeadphoneSay('$web3')"),
@@ -66,6 +67,7 @@ $grids = [ordered]@{
         Cell 2 3 '5 Next link (headphones)' @('<Command ID="WebBrowser.NextElement" />')
         Cell 3 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 4 3 'Back' @('<Command ID="Jump.Back" />')
+        Cell 5 3 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
 }
 
