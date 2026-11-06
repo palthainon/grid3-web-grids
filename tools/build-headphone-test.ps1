@@ -1,6 +1,7 @@
 # Builds grids\Headphone Test.gridset. Each cell's caption names the device it should play on:
 # the audio feedback voice (headphones) or the speaking voice (main speaker). Import it, press each cell, listen.
-# Cells 3 and 4 run templates\headphone.js on example.com, the route a site grid set can use for long text.
+# Cell 3 runs templates\headphone.js on example.com, the route a site grid set can use for long text. Cell 5 is
+# Grid 3's own link cursor, which should speak each link in the headphones.
 # Usage: pwsh -File tools\build-headphone-test.ps1
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -54,13 +55,17 @@ $grids = [ordered]@{
         Cell 0 2 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 3 2 'Grid Explorer' @('<Command ID="Settings.GridExplorer" />')
     )
-    $webGrid = Grid $webGrid 4 4 @(
-        '<Cell ColumnSpan="4" RowSpan="3"><Content><ContentType>Workspace</ContentType><ContentSubType>WebBrowser</ContentSubType>' +
+    $webGrid = Grid $webGrid 5 4 @(
+        '<Cell ColumnSpan="5" RowSpan="3"><Content><ContentType>Workspace</ContentType><ContentSubType>WebBrowser</ContentSubType>' +
             '<Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>'
-        Cell 0 3 '3 Web headphones' @(Script 'ExecuteJavaScript' "$headphone`ngrid3HeadphoneSay('$web3')")
+        # The click is async in Grid 3 (onDomClick message), so wait before NextElement moves on from it.
+        Cell 0 3 '3 Web headphones' @((Script 'ExecuteJavaScript' "$headphone`ngrid3HeadphoneSay('$web3')"),
+            "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' '00:00:01.0000000')$(Param 'cancellable' 1)</Command>",
+            '<Command ID="WebBrowser.NextElement" />')
         Cell 1 3 '4 Web speaker' @(Script 'SpeakJavascriptFunction' "'$web4'")
-        Cell 2 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
-        Cell 3 3 'Back' @('<Command ID="Jump.Back" />')
+        Cell 2 3 '5 Next link (headphones)' @('<Command ID="WebBrowser.NextElement" />')
+        Cell 3 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
+        Cell 4 3 'Back' @('<Command ID="Jump.Back" />')
     )
 }
 

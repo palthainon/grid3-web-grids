@@ -43,21 +43,25 @@ await page.route('https://example.com/**', (route) => route.fulfill({ contentTyp
   body: '<html><body><h1>Example</h1><p>Some page text <a href="#">a link</a>.</p></body></html>' }));
 await page.goto('https://example.com/');
 
-// What Grid 3 does after onDomClick, then what it speaks with usePrivateVoice = true.
+// What Grid 3 does after onDomClick (the cursor goes, silently, to the chunk's first hotspot), then on
+// WebBrowser.NextElement (the next hotspot, spoken with usePrivateVoice = true).
 const spoken = () => page.evaluate(() => {
   const click = window.__messages.filter((m) => m.name === 'onDomClick').pop();
   if (!click) return { error: 'no onDomClick message' };
   const id = JSON.parse(click.data).elementID;
   const chunk = document._grid_getElementById(id)._grid_getOrCreateContainingChunk();
-  const hotSpot = document._grid_getElementById(chunk)._grid_getFirstHotSpot();
-  return { id, text: document._grid_getElementById(hotSpot)._grid_getHotSpotAuditoryFeedbackText() };
+  const current = document._grid_getElementById(document._grid_getElementById(chunk)._grid_getFirstHotSpot());
+  const all = [...document.querySelectorAll('*')].filter((e) => e._grid_isHotSpot());
+  const next = all[all.indexOf(current) + 1];
+  return { id, current: current._grid_getHotSpotAuditoryFeedbackText(), text: next && next._grid_getHotSpotAuditoryFeedbackText() };
 });
 
 check('Grid 3 page script loaded', await page.evaluate(() => typeof HTMLElement.prototype._grid_getHotSpotAuditoryFeedbackText === 'function'),
   `${grid3Script.length} blocks`);
 await grid3(page, commandId('3 Web headphones'));
 const first = await spoken();
-check('cell 3 sends a click and its hotspot text is the test sentence', /^Test three\./.test(first.text ?? ''), first.text ?? first.error);
+check('cell 3: the click lands on a silent hotspot', first.current === '', JSON.stringify(first.current ?? first.error));
+check('cell 3: the next hotspot (NextElement) speaks the test sentence', /^Test three\./.test(first.text ?? ''), first.text ?? first.error);
 await grid3(page, commandId('3 Web headphones'));
 const second = await spoken();
 check('pressed again, the hotspot is a new element (so Grid 3 speaks again)', second.id && second.id !== first.id, `${first.id} then ${second.id}`);
