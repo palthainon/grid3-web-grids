@@ -50,14 +50,36 @@ Read from `SensorySoftware.Grids.Storage.dll` by reflection (method below), so t
 | `ComputerControl.MoveMouseBy` | `x`, `y` | |
 | `ComputerControl.MouseClick` | `button` (Left; Right) | Clicks where the pointer is |
 | `ComputerControl.MouseWheelDown` / `Up` | `indicatorenabled`, `commandtype` (SingleClick; RepeatedClicks, Continuous), `repeatcount`, `repeatgap`, `holdduration` | Scrolls whatever is under the pointer |
-| `Speech.SpeakNow` | `text`, `useauditoryvoice`, `wait` | Speaks fixed text |
-| `Speech.SpeakClipboard` | none | Speaks the clipboard. The only route found to speak page text in a custom set |
+| `Speech.SpeakNow` | `text`, `useauditoryvoice` (False), `wait` | Speaks fixed text. `useauditoryvoice` 1 uses the audio feedback voice ("Use audio feedback voice" in the editor) |
+| `Speech.ReadCell` | `useauditoryvoice` (False), `wait` | Speaks the pressed cell's own caption |
+| `Speech.SpeakClipboard` | none | Speaks the clipboard with the speaking voice. It has no audio feedback option |
+| `Email.Speak`, `Sms.Speak` | none | Speak the open message. The code passes `usePrivateVoice` false, so always the speaking voice |
 | `Speech.Stop` | none | |
 | `Jump.To` | `grid` | Within the grid set |
 | `Settings.ChangeGridSet` | `gridsetname` | Opens another grid set, for example from a startup set such as Fast Talker to Muse |
 | `Settings.GridExplorer`, `Settings.RestAll` | | |
 
-Full lists, with every command's keys and defaults, can be regenerated with the reflection script below.
+Full lists, with every command's keys and defaults: load the DLL in PowerShell 7 from Grid 3's program folder,
+resolve its other DLLs from the same folder (`AppDomain.AssemblyResolve`), and for every type named
+`*CommandDefinition` print `Instance.ID` and each `Instance.ParameterDefinitions` item's `Key` and `DefaultValue`.
+
+### Speaking to the headphones (Grid 3 3.0.104, read 2026-11-06)
+
+Grid 3 has two voices: the speaking voice (Settings > Speech, the main speaker) and the audio feedback voice
+(the "private voice", often headphones). `ISpeechService.Speak` takes `usePrivateVoice`. Read from the IL:
+
+- Only `Speech.SpeakNow` and `Speech.ReadCell` let a cell choose the audio feedback voice. Both speak fixed text
+  (the parameter, or the cell's caption). Email, SMS, clipboard and `SpeakJavascriptFunction` use the speaking voice.
+- **A web page can reach the audio feedback voice.** When Grid 3's web hotspot cursor moves, it speaks
+  `element._grid_getHotSpotAuditoryFeedbackText()` with `usePrivateVoice` true, if the user setting
+  `WebBrowserSettings.SpeakLinks` is on (default on). Grid 3's injected page script sends `onDomClick` for any
+  click, and `WebBrowserContainer.OnDomClick` moves the cursor to the first hotspot in the clicked element's chunk.
+- `templates/headphone.js` uses this: `grid3HeadphoneSay(text)` adds a 2-pixel button in its own
+  `data-grid-chunk` box, gives it a `_grid_getHotSpotAuditoryFeedbackText` that returns the text, and clicks it.
+  A new button each time, because Grid 3 speaks only when the hotspot changes.
+- Tested by `node tests	est-headphone.mjs` with Grid 3's own page script, loaded from the local install.
+  **Not yet heard in Grid 3.** `grids/Headphone Test.gridset` is the check: cells 1 to 4 each say which device
+  they should play on. Grid 3 3.0.93 may differ: this was read from 3.0.104.
 
 ### Page scripts in commandids (Grid 3 3.0.93, read 2026-11-06)
 
