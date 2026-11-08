@@ -371,6 +371,41 @@ while ($queue.Count) {
 $droppedGrids = @($jumps.Keys | Where-Object { -not $reached.Contains($_) } | Sort-Object)
 foreach ($dropName in $droppedGrids) { Remove-Item -Recurse (Join-Path $gridsDir $dropName) }
 
+# Theme (such as a dark mode): Background sets every grid's background. BackColour, BorderColour and FontColour
+# map old colours to new ones, in styles.xml and in cells' own style overrides. Styles sets colours on named
+# styles: a style with no FontColour draws black text, which a dark background needs to change.
+if ($config.Theme) {
+    $theme = $config.Theme
+    $rank = @{ BasedOnStyle = 0; BackColour = 1; BorderColour = 2; FontColour = 3 }
+    function Set-StyleColours($style, $set) {
+        foreach ($role in 'BackColour', 'BorderColour', 'FontColour') {
+            $node = $style.SelectSingleNode($role)
+            $value = if ($set -and $set[$role]) { $set[$role] } elseif ($node -and $theme[$role]) { $theme[$role][$node.InnerText] }
+            if (-not $value) { continue }
+            if (-not $node) {
+                $node = $style.OwnerDocument.CreateElement($role)
+                $before = @($style.ChildNodes | Where-Object { -not $rank.ContainsKey($_.Name) -or $rank[$_.Name] -gt $rank[$role] })[0]
+                if ($before) { [void]$style.InsertBefore($node, $before) } else { [void]$style.AppendChild($node) }
+            }
+            $node.InnerText = $value
+        }
+    }
+    [xml]$styleDoc = Get-Content -Raw $stylesPath
+    foreach ($style in $styleDoc.SelectNodes('//Styles/Style')) { Set-StyleColours $style $theme.Styles[$style.Key] }
+    Save-Xml $styleDoc $stylesPath
+    foreach ($folder in Get-ChildItem $gridsDir -Directory) {
+        $path = Join-Path $folder.FullName 'grid.xml'
+        [xml]$grid = Get-Content -Raw -LiteralPath $path
+        foreach ($style in $grid.SelectNodes('//Cell/Content/Style')) { Set-StyleColours $style $null }
+        if ($theme.Background) {
+            $background = $grid.DocumentElement.SelectSingleNode('BackgroundColour')
+            if (-not $background) { $background = $grid.DocumentElement.PrependChild($grid.CreateElement('BackgroundColour')) }
+            $background.InnerText = $theme.Background
+        }
+        Save-Xml $grid $path
+    }
+}
+
 # Settings: start grid, description, thumbnail. Smartbox's documentation and versioning ids are dropped,
 # so Grid 3 does not treat this set as its own WhatsApp or YouTube set.
 $settingsPath = Join-Path $work 'Settings0\settings.xml'
