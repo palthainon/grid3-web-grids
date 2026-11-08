@@ -59,13 +59,15 @@ match. Grid 3's browser on a light Windows theme shows Muse light until a person
 Keyboard (2026-11-06): follows the user's email keyboard. It is imported from Smartbox's stock Email set
 (`Email message`, `Email message tools`, `Email message punctuation`), with Muse's browser in place of the email
 editor, plus Fix (AI spelling correction) at column 7, row 2 and fast typing on the space bar, as on the user's
-copy. Letters are scan group 2. Send presses Enter; Back closes an empty search and returns. Clear selects all
+copy. Scan groups (2026-11-08): group 1 the controls (rows 0 to 2), then one group per key row, on both
+keyboards. Before, all letters were one group, as on the user's email keyboard. Send presses Enter; Back closes an empty search and returns. Clear selects all
 and deletes. Tools: Select all, Copy, Paste, Left, Right, Previous and Next word, Start and End of text.
 Dropped from the old WhatsApp keyboard: Quick msg and Emojis (Emojis is still on Home). Untested in a web page:
 Fix, Del word and the Tools commands (Grid 3 `Action.*` text commands; Del letter already worked).
 
 Switch scan groups on Home (2026-11-06): group 1 messages (Read msg, Prev msg, Reply, Next msg, Read options,
-Type, Emojis, Option 1, Option 2, Option 3), group 2 the chat column, group 3 Fast Talker, Rest and More.
+Type, Emojis, Option 1, Option 2, Option 3), group 2 the chat column, group 3 Fast Talker, Rest and More. More Tools (2026-11-08): group 1 column 0 (Back at
+0,0, then the item controls), group 2 the rail pages, group 3 the tools (Grid explorer at 9,5).
 The user mostly stays in Main chat, so messages come first.
 
 New-message alert (2026-11-06): web notifications cannot reach Grid 3 (no WebView2 permission handler in
