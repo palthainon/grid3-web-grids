@@ -128,7 +128,9 @@ $loaderId = "_;function`tGridCommands(){};if($cache`_v!=='$version'){var`t__g3s=
 
 # Imports: grids from another stock grid set (such as Smartbox's Email keyboard) replace or add template grids.
 # Each import names its Source and a Grids map (source grid -> short grid name here). Jumps to grids in the map
-# follow it; jumps to a Send grid become Enter then Jump.Back; jumps to a Back grid become Jump.Back. A cell
+# follow it; jumps to a Send grid become Enter then Jump.Back; jumps to a Back grid become Jump.Back. Jumps from
+# a sub-grid to a Return grid (the main keyboard) become Jump.Back: Jump.To pushes onto Grid 3's history and
+# Jump.Back pops it, so a Jump.To there makes the main grid's Back return to the sub-grid in a loop. A cell
 # that jumps anywhere else, or has a command matching DropCommands, is removed. The workspace cell comes from
 # the template grid being replaced (the site's browser in place of the email editor). The styles the grids use
 # come along; a name that clashes with a different template style gets " (import)" added.
@@ -165,7 +167,10 @@ foreach ($import in @($config.Imports | Where-Object { $_ })) {
                 if (@($import.DropCommands | Where-Object { $command.ID -like $_ }).Count) { $drop = $true; break }
                 if ($command.ID -ne 'Jump.To') { continue }
                 $param = $command.SelectSingleNode("Parameter[@Key='grid']")
-                if ($import.Grids.ContainsKey($param.InnerText)) { $param.InnerText = "$prefix - $($import.Grids[$param.InnerText])" }
+                if ($param.InnerText -in @($import.Return) -and $param.InnerText -ne $sourceGrid) {
+                    $back = $doc.CreateElement('Command'); $back.SetAttribute('ID', 'Jump.Back'); [void]$command.ParentNode.ReplaceChild($back, $command)
+                }
+                elseif ($import.Grids.ContainsKey($param.InnerText)) { $param.InnerText = "$prefix - $($import.Grids[$param.InnerText])" }
                 elseif ($param.InnerText -in @($import.Send)) {
                     $enter = $doc.CreateElement('Command'); $enter.SetAttribute('ID', 'ComputerControl.Keyboard')
                     $key = $enter.AppendChild($doc.CreateElement('Parameter')); $key.SetAttribute('Key', 'keystring'); $key.InnerText = '{ENTER}'
