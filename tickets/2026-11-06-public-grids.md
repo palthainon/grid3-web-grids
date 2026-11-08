@@ -29,6 +29,10 @@ work:
 
 ## Status
 
+- 2026-11-08 (later): Added the accessibility-review skill (`tools/evaluate-gridset.ps1`, `tests/site-audit.js`,
+  a cited checklist). Muse evaluation: `docs/evaluations/2026-11-08-muse.md`, seven ranked improvements, none
+  made yet (PR 21, on dev).
+
 - 2026-11-08: A switch user could not leave the Muse keyboard. Jump.To pushes onto Grid 3's history and
   Jump.Back pops it, so the Tools and Punctuation grids' Jump.To back to the keyboard made its Back loop. The
   builder's Imports now take `Return` (PRs 16 and 17, on main). Not yet checked in Grid 3.
