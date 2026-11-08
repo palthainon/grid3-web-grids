@@ -51,6 +51,7 @@
            Grids  = @{ 'Email message' = 'Keyboard'; 'Email message tools' = 'Keyboard - Tools'; 'Email message punctuation' = 'Keyboard - Punctuation' }
            Send   = @('Email message confirm')
            Back   = @('Email recipients')
+           Return = @('Email message')
            DropCommands = @('Email.*', 'Action.Print', 'Action.UndoClear') }
     )
 

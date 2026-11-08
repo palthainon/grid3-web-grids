@@ -55,7 +55,8 @@ Read from `SensorySoftware.Grids.Storage.dll` by reflection (method below), so t
 | `Speech.SpeakClipboard` | none | Speaks the clipboard with the speaking voice. It has no audio feedback option |
 | `Email.Speak`, `Sms.Speak` | none | Speak the open message. The code passes `usePrivateVoice` false, so always the speaking voice |
 | `Speech.Stop` | none | |
-| `Jump.To` | `grid` | Within the grid set |
+| `Jump.To` | `grid` | Within the grid set. Pushes the grid onto the history stack (`NavigationService.JumpToGrid`) |
+| `Jump.Back` | none | Pops the history stack (`NavigationService.JumpBack`). If a sub-grid returns to its main grid with `Jump.To`, the main grid's Jump.Back returns to the sub-grid, and the user loops between them. Return from a sub-grid with `Jump.Back` |
 | `Settings.ChangeGridSet` | `gridsetname` | Opens another grid set, for example from a startup set such as Fast Talker to Muse |
 | `Settings.GridExplorer`, `Settings.RestAll` | | |
 
