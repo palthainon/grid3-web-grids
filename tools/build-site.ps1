@@ -260,7 +260,9 @@ foreach ($folder in Get-ChildItem $gridsDir -Directory) {
 
     # Edits keep a stock cell's caption, image and style: Commands replaces its commands, Prepend and Append add
     # before or after its own, JumpBack turns its Jump.To into Jump.Back (back to whichever grid opened this
-    # one), and Span = @(columns, rows) resizes it.
+    # one), Span = @(columns, rows) resizes it, Audio sets the AudioDescription that auditory scanning speaks,
+    # and MoveTo = @(x, y) moves it. Moves happen after all edits, so two cells can swap places.
+    $moves = @()
     foreach ($edit in @($config.Edits | Where-Object { $_.Grid -eq $short })) {
         $target = Get-CellAt $cells $edit.X $edit.Y
         if (-not $target) { throw "No cell at $short $($edit.X),$($edit.Y) to edit." }
@@ -297,6 +299,19 @@ foreach ($folder in Get-ChildItem $gridsDir -Directory) {
                 $back = $grid.CreateElement('Command'); $back.SetAttribute('ID', 'Jump.Back')
                 [void]$list.ReplaceChild($back, $jump)
             }
+        }
+        if ($edit.Audio) {
+            $label = $target.SelectSingleNode('Content/CaptionAndImage')
+            if (-not $label) { $label = $target.SelectSingleNode('Content').AppendChild($grid.CreateElement('CaptionAndImage')) }
+            $audio = $label.SelectSingleNode('AudioDescription')
+            if (-not $audio) { $audio = $label.PrependChild($grid.CreateElement('AudioDescription')) }
+            $audio.InnerText = $edit.Audio
+        }
+        if ($edit.MoveTo) { $moves += , @($target, $edit.MoveTo) }
+    }
+    foreach ($move in $moves) {
+        foreach ($pair in @(@('X', $move[1][0]), @('Y', $move[1][1]))) {
+            if ($pair[1] -eq 0) { $move[0].RemoveAttribute($pair[0]) } else { $move[0].SetAttribute($pair[0], "$($pair[1])") }
         }
     }
 
