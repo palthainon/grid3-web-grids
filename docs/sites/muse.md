@@ -51,6 +51,11 @@ Search box: an empty search closes with one Escape on the box (the animation tak
 keyboard's Back runs `Search/Leave`, which closes an empty search, then Jump.Back returns to More. A typed
 search stays open for Next item and Open item. Seen in Chrome 2026-11-06.
 
+Dark mode (2026-11-08): Muse has Light, Dark and System buttons in Settings > General > Appearance > Mode
+(`aria-label` Light, Dark, System). System follows `prefers-color-scheme`, and Muse puts the `dark` class on
+`<html>` (page background `#181819`). Seen in Chrome 2026-11-08. The grid set's cells use a dark `Theme` to
+match. Grid 3's browser on a light Windows theme shows Muse light until a person picks Dark.
+
 Keyboard (2026-11-06): follows the user's email keyboard. It is imported from Smartbox's stock Email set
 (`Email message`, `Email message tools`, `Email message punctuation`), with Muse's browser in place of the email
 editor, plus Fix (AI spelling correction) at column 7, row 2 and fast typing on the space bar, as on the user's

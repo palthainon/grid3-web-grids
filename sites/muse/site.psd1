@@ -12,6 +12,20 @@
     StartWait   = 6                     # seconds after opening muse.ai before the script loads (slow device)
     Description = 'Muse (muse.ai) for Grid 3. Built from the Grid 3 WhatsApp grid set layout, with its own page script.'
 
+    # Dark cells to match Muse's dark mode (page background #181819), at least 4.5:1 text contrast. The user
+    # asked for a dimmer screen. Light text is #EDEDED, a little below white, for less glare.
+    Theme = @{
+        Background   = '#181819FF'
+        BackColour   = @{ '#FFFFFFFF' = '#2A2A2DFF'; '#EDEEEFFF' = '#2A2A2DFF'; '#2C82C9FF' = '#1F5F99FF'; '#009688FF' = '#00695CFF'; '#25D366FF' = '#00695CFF' }
+        BorderColour = @{ '#FFFFFFFF' = '#181819FF'; '#D3D3D3FF' = '#55555AFF'; '#BDBDBDFF' = '#55555AFF'; '#475577FF' = '#7F8FB3FF'; '#2C82C9FF' = '#1F5F99FF' }
+        FontColour   = @{ '#000000FF' = '#EDEDEDFF'; '#242424FF' = '#EDEDEDFF'; '#475577FF' = '#DDE3F0FF'; '#009688FF' = '#7FD8CEFF'; '#FFFFFFFF' = '#EDEDEDFF' }
+        Styles       = @{
+            'Default'            = @{ BackColour = '#181819FF'; FontColour = '#EDEDEDFF' }
+            'style 3'            = @{ FontColour = '#EDEDEDFF' }    # WhatsApp keys: no FontColour, so black
+            'Workspace (import)' = @{ BackColour = '#181819FF' }    # the browser cell before the page draws
+        }
+    }
+
     # WhatsApp housekeeping calls with no Muse equivalent. They are removed; the rest of the cell stays.
     Ignore = @('Home/Show_Chat_List', 'Home/Cancel_Reply_To_Message')
     # Muse functions outside the messaging contract.

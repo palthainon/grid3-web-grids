@@ -29,6 +29,10 @@ work:
 
 ## Status
 
+- 2026-11-08: A switch user could not leave the Muse keyboard. Jump.To pushes onto Grid 3's history and
+  Jump.Back pops it, so the Tools and Punctuation grids' Jump.To back to the keyboard made its Back loop. The
+  builder's Imports now take `Return` (PRs 16 and 17, on main). Not yet checked in Grid 3.
+
 - 2026-11-06 (later, 3): A web page can speak through Grid 3's audio feedback voice (docs/grid3-internals.md,
   "Speaking to the headphones"). Built `grids/Headphone Test.gridset` to hear it on a device. Not yet heard in Grid 3.
 

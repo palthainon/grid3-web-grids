@@ -76,7 +76,9 @@ opens), `StartWait` (seconds to wait after opening the site before the loader ru
 to replace its commands, `Prepend`, `Append`, `JumpBack` to turn its Jump.To into Jump.Back, `Span = @(cols, rows)`),
 `Imports` (grids from another stock set: `Source`, `Grids` map from source grid to short name, `Send` and `Back`
 grid lists, `Return` (the main grid: sub-grid jumps to it become Jump.Back), `DropCommands` patterns; the
-replaced grid's workspace cell is kept), `Cells` (each with `Grid`, `X`, `Y`,
+replaced grid's workspace cell is kept), `Theme` (recolour the set, such as dark mode: `Background` for every grid,
+`BackColour`, `BorderColour` and `FontColour` maps from old to new colour, and `Styles` to set colours on named
+styles), `Cells` (each with `Grid`, `X`, `Y`,
 `Caption`, `Image`, `Style`, `Commands`).
 
 ## The two example sites
