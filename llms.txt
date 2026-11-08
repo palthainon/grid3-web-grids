@@ -10,3 +10,5 @@
 - [Templates and builder](docs/templates.md): build a site grid set, site.psd1 keys, alerts, adding a site
 - [Muse page facts](docs/sites/muse.md): selectors and behaviour of muse.ai that the Muse grid set relies on
 - [Building and installing](docs/building-grids.md): build, check, import, Edit mode
+- [Accessibility review](.claude/skills/accessibility-review/SKILL.md): evaluate a grid set and its website; tools/evaluate-gridset.ps1, tests/site-audit.js, a cited checklist
+- [Muse evaluation 2026-11-08](docs/evaluations/2026-11-08-muse.md): findings and ranked improvements

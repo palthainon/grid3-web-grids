@@ -8,6 +8,7 @@ disabilities communicate, so be careful and test before you hand anything over.
 1. [docs/grid3-internals.md](docs/grid3-internals.md): what Grid 3 can and cannot do, with exact command IDs.
 2. [docs/templates.md](docs/templates.md): how `tools/build-site.ps1` builds a site from a stock set.
 3. [.claude/skills/site-grid/SKILL.md](.claude/skills/site-grid/SKILL.md): the build, test and live-check loop.
+   [.claude/skills/accessibility-review/SKILL.md](.claude/skills/accessibility-review/SKILL.md): evaluate a grid set and its site for access and readability.
 4. `docs/sites/<site>.md` for the site you are changing.
 
 ## Workflow
