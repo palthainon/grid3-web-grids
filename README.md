@@ -43,6 +43,8 @@ chime when Muse replies. It was built for, and tested by, a Grid 3 user on a Gri
 | [docs/building-grids.md](docs/building-grids.md) | Build, check, import, Edit mode, adding a tile to a main grid set |
 | [docs/sites/muse.md](docs/sites/muse.md) | Muse page facts the script relies on, and how to re-check them |
 | [docs/online-grids.md](docs/online-grids.md) | Publishing to Smartbox's Online Grids library |
+| [.claude/skills/accessibility-review/SKILL.md](.claude/skills/accessibility-review/SKILL.md) | Evaluate a grid set and its website: `tools/evaluate-gridset.ps1`, `tests/site-audit.js`, a cited checklist |
+| [docs/evaluations/](docs/evaluations/) | Evaluation reports, such as Muse on 2026-11-08 |
 
 ## Licence and trademarks
 
