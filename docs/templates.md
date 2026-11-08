@@ -73,7 +73,8 @@ the message to the user's email or as a text: Grid 3 alerts for those natively.
 `alert.js`), `ScriptName` (commandid and `GridCommands` prefix),
 `Url`, `Output`, `Logo`, `ThumbnailBackground`, `AutoStart` (run the Start cell's commands when the set
 opens), `StartWait` (seconds to wait after opening the site before the loader runs), `Description`, `Ignore`, `Extra`, `Blank` (`'<grid> X,Y'`), `Edits` (change a stock cell and keep its look: `Grid`, `X`, `Y`, and any of `Commands`
-to replace its commands, `Prepend`, `Append`, `JumpBack` to turn its Jump.To into Jump.Back, `Span = @(cols, rows)`),
+to replace its commands, `Prepend`, `Append`, `JumpBack` to turn its Jump.To into Jump.Back, `Span = @(cols, rows)`, `Audio` for the AudioDescription
+that auditory scanning speaks, `MoveTo = @(x, y)` to move it; moves happen last, so two cells can swap),
 `Imports` (grids from another stock set: `Source`, `Grids` map from source grid to short name, `Send` and `Back`
 grid lists, `Return` (the main grid: sub-grid jumps to it become Jump.Back), `DropCommands` patterns; the
 replaced grid's workspace cell is kept), `Theme` (recolour the set, such as dark mode: `Background` for every grid,

@@ -38,14 +38,27 @@
 
     # Switch scan groups on Home: group 1 is messages (most used), 2 the chat column, 3 Fast Talker, Rest and More.
     ScanBlocks = @{
-        # Keyboard letters, digits key and full stop in group 2, as on the user's email keyboard.
-        'Keyboard' = @{ '0,3' = 2; '1,3' = 2; '2,3' = 2; '3,3' = 2; '4,3' = 2; '5,3' = 2; '6,3' = 2; '7,3' = 2; '8,3' = 2; '9,3' = 2; '0,4' = 2; '1,4' = 2; '2,4' = 2; '3,4' = 2; '4,4' = 2; '5,4' = 2; '6,4' = 2; '7,4' = 2; '8,4' = 2; '9,4' = 2; '0,5' = 2; '1,5' = 2; '2,5' = 2; '3,5' = 2; '4,5' = 2; '6,5' = 2; '7,5' = 2; '8,5' = 2; '9,5' = 2 }
+        # Keyboards: group 1 is the controls (rows 0 to 2), then one group per key row, so a switch user picks
+        # a row first (accessibility review 2026-11-08: 29 letters in one group took up to 31 steps).
+        'Keyboard' = @{ '0,3' = 2; '1,3' = 2; '2,3' = 2; '3,3' = 2; '4,3' = 2; '5,3' = 2; '6,3' = 2; '7,3' = 2; '8,3' = 2; '9,3' = 2; '0,4' = 3; '1,4' = 3; '2,4' = 3; '3,4' = 3; '4,4' = 3; '5,4' = 3; '6,4' = 3; '7,4' = 3; '8,4' = 3; '9,4' = 3; '0,5' = 4; '1,5' = 4; '2,5' = 4; '3,5' = 4; '4,5' = 4; '6,5' = 4; '7,5' = 4; '8,5' = 4; '9,5' = 4 }
+        'Keyboard - Punctuation' = @{ '0,3' = 2; '1,3' = 2; '2,3' = 2; '3,3' = 2; '4,3' = 2; '5,3' = 2; '6,3' = 2; '7,3' = 2; '8,3' = 2; '9,3' = 2; '0,4' = 3; '1,4' = 3; '2,4' = 3; '3,4' = 3; '4,4' = 3; '5,4' = 3; '6,4' = 3; '7,4' = 3; '8,4' = 3; '9,4' = 3; '0,5' = 4; '1,5' = 4; '2,5' = 4; '3,5' = 4; '4,5' = 4; '6,5' = 4; '7,5' = 4; '8,5' = 4; '9,5' = 4 }
+        # More Tools: one group per column: item controls (with Back), rail pages, then tools.
+        'More Tools' = @{ '8,0' = 2; '8,1' = 2; '8,2' = 2; '8,3' = 2; '8,4' = 2; '8,5' = 2; '9,0' = 3; '9,1' = 3; '9,2' = 3; '9,3' = 3; '9,4' = 3; '9,5' = 3 }
         'Home' = @{ '0,1' = 2; '0,2' = 2; '0,3' = 2; '0,4' = 2; '0,5' = 2; '0,0' = 3; '9,0' = 3; '9,5' = 3 }
     }
 
     # Keyboard Back and Send: close the search box if nothing was typed, then go back to the grid that opened
     # the keyboard (More after Search, Home after Type or Reply).
     Edits = @(
+        # Back at 0,0 as on the keyboards; Grid explorer (which leaves the set) goes to Back's old place.
+        @{ Grid = 'More Tools'; X = 9; Y = 5; MoveTo = @(0, 0) }
+        @{ Grid = 'More Tools'; X = 0; Y = 0; MoveTo = @(9, 5) }
+        # Keys with only an image or a blank: words for auditory scanning, as Smartbox's own keyboards have.
+        @{ Grid = 'Keyboard'; X = 4; Y = 5; Audio = 'space' }
+        @{ Grid = 'Keyboard - Punctuation'; X = 4; Y = 5; Audio = 'space' }
+        @{ Grid = 'Keyboard - Punctuation'; X = 8; Y = 4; Audio = 'enter' }
+        @{ Grid = 'Keyboard - Punctuation'; X = 1; Y = 5; Audio = 'left' }
+        @{ Grid = 'Keyboard - Punctuation'; X = 2; Y = 5; Audio = 'right' }
         @{ Grid = 'Keyboard'; X = 0; Y = 0; JumpBack = $true; Prepend = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Search/Leave' }) }
         @{ Grid = 'Keyboard'; X = 9; Y = 1; JumpBack = $true; Prepend = @() }
         # The email keyboard's Clear empties Grid 3's own editor; in a web page select all and delete instead.
