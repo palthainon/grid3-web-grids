@@ -59,8 +59,8 @@ match. Grid 3's browser on a light Windows theme shows Muse light until a person
 Keyboard (2026-11-06): follows the user's email keyboard. It is imported from Smartbox's stock Email set
 (`Email message`, `Email message tools`, `Email message punctuation`), with Muse's browser in place of the email
 editor, plus Fix (AI spelling correction) at column 7, row 2 and fast typing on the space bar, as on the user's
-copy. Scan groups (2026-11-08): group 1 the controls (rows 0 to 2), then one group per key row, on both
-keyboards. Before, all letters were one group, as on the user's email keyboard. Send presses Enter; Back closes an empty search and returns. Clear selects all
+copy. Scan groups: the letters are one group, scanned key by key, as on the user's email keyboard. Row groups
+were tried on 2026-11-08 and reverted at the operator's request. Punctuation keeps one group per key row. Send presses Enter; Back closes an empty search and returns. Clear selects all
 and deletes. Tools: Select all, Copy, Paste, Left, Right, Previous and Next word, Start and End of text.
 Dropped from the old WhatsApp keyboard: Quick msg and Emojis (Emojis is still on Home). Untested in a web page:
 Fix, Del word and the Tools commands (Grid 3 `Action.*` text commands; Del letter already worked).
