@@ -6,6 +6,7 @@
 # as listed in Settings > Speech). Grid 3 reads the device when speech starts, so the switch back waits -SwitchWait.
 # The Email page does the same around Email.Speak (needs an email account in Grid 3). Cell 11 does it around
 # Speech.SpeakClipboard, so any long text you copy (an email in a web browser) tests the route without an account.
+# The Texts page does it around Sms.Speak (needs a phone linked to Grid 3).
 # Usage: pwsh -File tools\build-headphone-test.ps1 [-Speaker '<name>'] [-Headphones '<name>'] [-SwitchWait '00:00:03']
 param(
     [string]$Speaker = 'Speakers (Realtek(R) Audio)',
@@ -58,6 +59,7 @@ $homeGrid = "$name - Home"
 $switchGrid = "$name - Switch"
 $webGrid = "$name - Web"
 $emailGrid = "$name - Email"
+$textGrid = "$name - Texts"
 $headphone = Get-Content (Join-Path $root 'templates\headphone.js') -Raw
 $web3 = 'Test three. If you hear this in your headphones, a web page can read long text to you privately.'
 $web4 = 'Test four. This web text should come from the main speaker.'
@@ -72,6 +74,7 @@ $grids = [ordered]@{
         Cell 0 2 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 1 2 'Switch test' @("<Command ID=`"Jump.To`">$(Param 'grid' $switchGrid)</Command>")
         Cell 2 2 'Email test' @("<Command ID=`"Jump.To`">$(Param 'grid' $emailGrid)</Command>")
+        Cell 3 2 'Text message test' @("<Command ID=`"Jump.To`">$(Param 'grid' $textGrid)</Command>")
         # Sign-in checks for web mail and texts in Grid 3's browser. A person signs in; agents never enter passwords.
         (WebCell 0 1 'Gmail sign-in' 'https://mail.google.com/')
         (WebCell 1 1 'Outlook sign-in' 'https://outlook.live.com/mail/')
@@ -102,6 +105,22 @@ $grids = [ordered]@{
         Cell 0 3 '9 Read email in headphones' @('<Command ID="Speech.Stop" />', (Device $Headphones), '<Command ID="Email.Speak" />', (Pause $SwitchWait), (Device $Speaker))
         Cell 1 3 '10 Read email on speaker' @('<Command ID="Email.Speak" />')
         Cell 2 3 '11 Read copied text in headphones' @('<Command ID="Speech.Stop" />', (Device $Headphones), '<Command ID="Speech.SpeakClipboard" />', (Pause $SwitchWait), (Device $Speaker))
+        Cell 3 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
+        Cell 4 3 '12 Speaker check' @(SpeakNow 'Test twelve. This should come from the main speaker.' 0)
+        Cell 5 3 'Back' @('<Command ID="Jump.Back" />')
+    )
+    # Same route for text messages (Sms.Speak). Needs a phone linked to Grid 3.
+    $textGrid = Grid $textGrid 6 4 @(
+        '<Cell ColumnSpan="4" RowSpan="3"><Content><ContentType>LiveCell</ContentType><ContentSubType>Sms.Messages</ContentSubType>' +
+            '<Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>'
+        Cell 4 0 'Previous text' @('<Command ID="Sms.Previous" />')
+        Cell 4 1 'Next text' @('<Command ID="Sms.Next" />')
+        Cell 4 2 'Open text' @('<Command ID="Sms.Open" />')
+        Cell 5 0 'Text back' @('<Command ID="Sms.Back" />')
+        Cell 5 1 'Reset to speaker' @((Device $Speaker), (SpeakNow 'Speech is on the main speaker.' 0))
+        Cell 5 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+        Cell 0 3 '13 Read text in headphones' @('<Command ID="Speech.Stop" />', (Device $Headphones), '<Command ID="Sms.Speak" />', (Pause $SwitchWait), (Device $Speaker))
+        Cell 1 3 '14 Read text on speaker' @('<Command ID="Sms.Speak" />')
         Cell 3 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 4 3 '12 Speaker check' @(SpeakNow 'Test twelve. This should come from the main speaker.' 0)
         Cell 5 3 'Back' @('<Command ID="Jump.Back" />')
