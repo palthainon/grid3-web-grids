@@ -88,7 +88,7 @@ $grids = [ordered]@{
     )
     # Press the device cell that names the headphones to hear the email there. Speech stays on that device until
     # a cell naming the speaker is pressed (here or on the Devices page).
-    $emailGrid = Grid $emailGrid 6 4 @(
+    $emailGrid = Grid $emailGrid 7 4 @(
         '<Cell ColumnSpan="4" RowSpan="3"><Content><ContentType>LiveCell</ContentType><ContentSubType>Email.Messages</ContentSubType>' +
             '<Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>'
         Cell 4 0 'Previous email' @('<Command ID="Email.Previous" />')
@@ -98,11 +98,14 @@ $grids = [ordered]@{
         Cell 5 1 'Device test' @("<Command ID=`"Jump.To`">$(Param 'grid' $deviceGrid)</Command>")
         Cell 5 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
         foreach ($i in 0..3) { DeviceCell $i 3 @('<Command ID="Speech.Stop" />', '<Command ID="Email.Speak" />') }
+        Cell 6 0 'Read email' @('<Command ID="Speech.Stop" />', '<Command ID="Email.Speak" />')
+        Cell 6 1 'Bottom row: pick a device. It moves speech there and reads the email.' @()
+        Cell 6 3 '17 Speaker check' @(SpeakNow 'Test seventeen. This plays on the device picked last.' 0)
         Cell 4 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 5 3 'Back' @('<Command ID="Jump.Back" />')
     )
     # Same for text messages (Sms.Speak). Needs a phone linked to Grid 3.
-    $textGrid = Grid $textGrid 6 4 @(
+    $textGrid = Grid $textGrid 7 4 @(
         '<Cell ColumnSpan="4" RowSpan="3"><Content><ContentType>LiveCell</ContentType><ContentSubType>Sms.Messages</ContentSubType>' +
             '<Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>'
         Cell 4 0 'Previous text' @('<Command ID="Sms.Previous" />')
@@ -112,6 +115,9 @@ $grids = [ordered]@{
         Cell 5 1 'Device test' @("<Command ID=`"Jump.To`">$(Param 'grid' $deviceGrid)</Command>")
         Cell 5 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
         foreach ($i in 0..3) { DeviceCell $i 3 @('<Command ID="Speech.Stop" />', '<Command ID="Sms.Speak" />') }
+        Cell 6 0 'Read text' @('<Command ID="Speech.Stop" />', '<Command ID="Sms.Speak" />')
+        Cell 6 1 'Bottom row: pick a device. It moves speech there and reads the text.' @()
+        Cell 6 3 '17 Speaker check' @(SpeakNow 'Test seventeen. This plays on the device picked last.' 0)
         Cell 4 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 5 3 'Back' @('<Command ID="Jump.Back" />')
     )
