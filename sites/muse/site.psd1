@@ -34,7 +34,7 @@
                'Items/Previous', 'Items/Next', 'Items/Read', 'Items/Read_All', 'Items/Open', 'Items/Close', 'Search/Leave')
 
     # WhatsApp cells that only open grids for actions Muse lacks (delete, groups, log out, theme, media viewer) and WhatsApp's own help pages.
-    Blank = @('More Tools 8,3', 'More Tools 9,3', 'More Tools 8,4', 'More Tools 9,4', 'More Tools 8,5', 'Home 8,5', 'Start 0,5')
+    Blank = @('More Tools 8,3', 'More Tools 9,3', 'More Tools 8,4', 'More Tools 9,4', 'More Tools 8,5', 'Home 8,5', 'Home 9,3', 'Start 0,5')
 
     # Switch scan groups on Home: group 1 is messages (most used), 2 the chat column, 3 Back, Rest and More.
     ScanBlocks = @{
@@ -54,6 +54,8 @@
         # Back at 0,0 as on the keyboards; Grid explorer (which leaves the set) goes to Back's old place.
         @{ Grid = 'More Tools'; X = 9; Y = 5; MoveTo = @(0, 0) }
         @{ Grid = 'More Tools'; X = 0; Y = 0; MoveTo = @(9, 5) }
+        # Read msg (aloud) moves to 9,3 so Read in headphones takes 8,0 and is scanned first (operator, 2026-11-09).
+        @{ Grid = 'Home'; X = 8; Y = 0; MoveTo = @(9, 3) }
         # Keys with only an image or a blank: words for auditory scanning, as Smartbox's own keyboards have.
         @{ Grid = 'Keyboard'; X = 4; Y = 5; Audio = 'space' }
         @{ Grid = 'Keyboard - Punctuation'; X = 4; Y = 5; Audio = 'space' }
@@ -103,7 +105,8 @@
            Commands = @(@{ ID = 'Prediction.CorrectionTool' }) }
         # Read msg into the headphones (templates\headphone.js): the click lands silently, then NextElement speaks it
         # with the audio feedback voice. It replaced Emojis, which moved to More Tools in place of Zoom out (operator, 2026-11-06).
-        @{ Grid = 'Home'; X = 9; Y = 3; Caption = 'Read in headphones'; Style = 'style 2'; Image = '[GRID3X]ear.wmf'
+        # At 8,0, before Read msg (operator, 2026-11-09).
+        @{ Grid = 'Home'; X = 8; Y = 0; Caption = 'Read in headphones'; Style = 'style 2'; Image = '[GRID3X]ear.wmf'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Read_Selected_Message_Headphones' },
                         @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'More Tools'; X = 9; Y = 2; Caption = 'Emojis'; Image = '[GRID3X]heart.wmf'
