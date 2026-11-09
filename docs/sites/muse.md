@@ -65,8 +65,8 @@ and deletes. Tools: Select all, Copy, Paste, Left, Right, Previous and Next word
 Dropped from the old WhatsApp keyboard: Quick msg and Emojis (Emojis is still on Home). Untested in a web page:
 Fix, Del word and the Tools commands (Grid 3 `Action.*` text commands; Del letter already worked).
 
-Switch scan groups on Home (2026-11-06): group 1 messages (Read msg, Prev msg, Reply, Next msg, Read options,
-Type, Emojis, Option 1, Option 2, Option 3), group 2 the chat column, group 3 Back (opens Fast Talker), Rest and More. More Tools (2026-11-08): group 1 column 0 (Back at
+Switch scan groups on Home (2026-11-06): group 1 messages (Read in headphones, Prev msg, Reply, Next msg, Read options,
+Type, Read msg, Option 1, Option 2, Option 3), group 2 the chat column, group 3 Back (opens Fast Talker), Rest and More. More Tools (2026-11-08): group 1 column 0 (Back at
 0,0, then the item controls), group 2 the rail pages, group 3 the tools (Grid explorer at 9,5).
 The user mostly stays in Main chat, so messages come first.
 
@@ -98,7 +98,7 @@ First check:
 - Read msg reads the newest message. Prev msg moves up one and outlines it.
 - `Muse/Home/Read_Selected_Message_Headphones` gives the same text to `templates/headphone.js`, so Grid 3 reads it with
   the audio feedback voice (headphones). Its cell must run `CommandExecution.Wait` (1 s) and `WebBrowser.NextElement`
-  after it. In the mock, the hidden click kept the selection and both panels. Home's "Read in headphones" cell (9,3)
+  after it. In the mock, the hidden click kept the selection and both panels. Home's "Read in headphones" cell (8,0, before Read msg at 9,3)
   carries it. It replaced Emojis, which moved to More Tools in place of Zoom out (2026-11-06). Not tried on muse.ai.
 - Read options said "1, Add both. 2, Add only the weekly schedule. 3, Leave the folder as it is."
 - Next chat opened the panel, picked the next chat, closed the panel, and Read chat named it. Prev chat went
