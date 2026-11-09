@@ -57,7 +57,7 @@ Read from `SensorySoftware.Grids.Storage.dll` by reflection (method below), so t
 | `Speech.Stop` | none | |
 | `Jump.To` | `grid` | Within the grid set. Pushes the grid onto the history stack (`NavigationService.JumpToGrid`) |
 | `Jump.Back` | none | Pops the history stack (`NavigationService.JumpBack`). If a sub-grid returns to its main grid with `Jump.To`, the main grid's Jump.Back returns to the sub-grid, and the user loops between them. Return from a sub-grid with `Jump.Back` |
-| `Settings.ChangeGridSet` | `gridsetname` | Opens another grid set, for example from a startup set such as Fast Talker to Muse |
+| `Settings.ChangeGridSet` | `gridsetname` | Opens another grid set at its start grid, for example from a startup set such as Fast Talker to Muse. It takes no grid name. `Jump.Back` does not cross grid sets (`NavigationService.JumpBack` checks the set name, read 2026-11-08), so a Back from another set can only open the startup set at its start |
 | `Settings.GridExplorer`, `Settings.RestAll` | | |
 
 Full lists, with every command's keys and defaults: load the DLL in PowerShell 7 from Grid 3's program folder,

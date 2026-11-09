@@ -36,7 +36,7 @@
     # WhatsApp cells that only open grids for actions Muse lacks (delete, groups, log out, theme, media viewer) and WhatsApp's own help pages.
     Blank = @('More Tools 8,3', 'More Tools 9,3', 'More Tools 8,4', 'More Tools 9,4', 'More Tools 8,5', 'Home 8,5', 'Start 0,5')
 
-    # Switch scan groups on Home: group 1 is messages (most used), 2 the chat column, 3 Fast Talker, Rest and More.
+    # Switch scan groups on Home: group 1 is messages (most used), 2 the chat column, 3 Back, Rest and More.
     ScanBlocks = @{
         # Keyboard: the letters, digits key and full stop are one group, scanned key by key, as on the user's
         # email keyboard. Row groups were tried on 2026-11-08; the operator asked for key by key again.
@@ -87,8 +87,10 @@
     # chat and closes the chat panel, Chats opens or closes the chat panel, Muse panel opens or closes Muse's
     # avatar panel. Read options and Option 1-3 press the clickable items in Muse's newest message.
     Cells = @(
-        # Back to the user's startup grid set (Fast Talker here: set gridsetname to yours). Grid explorer is on More.
-        @{ Grid = 'Home'; X = 0; Y = 0; Caption = 'Fast Talker'; Style = 'style 2'
+        # Back: opens the user's startup grid set at its start (Fast Talker here: set gridsetname to yours). Back
+        # is at 0,0 on every Muse grid. Jump.Back cannot cross grid sets, and Change grid set takes no grid, so it
+        # cannot return to the startup set's menu that opened Muse. Grid explorer is on More.
+        @{ Grid = 'Home'; X = 0; Y = 0; Caption = 'Back'; Image = '[GRID3X]jump_back.wmf'; Style = 'style 2'
            Commands = @(@{ ID = 'Settings.ChangeGridSet'; gridsetname = 'Fast Talker' }) }
         @{ Grid = 'Home'; X = 0; Y = 3; Caption = 'Select chat'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Chats/Select' }) }
