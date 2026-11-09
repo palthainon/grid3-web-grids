@@ -86,13 +86,15 @@ Grid 3 has two voices: the speaking voice (Settings > Speech, the main speaker) 
   `grids/Headphone Test.gridset` is the check on a device: each cell says which device it should play on.
   Seen 2026-11-06 on a test machine (3.0.104): `SpeakNow` with and without the audio feedback voice played on the
   right devices. The two-button route played in the headphones too. Grid 3 3.0.93 may differ.
-- **Email and SMS: move the speaking voice for one reading.** `internal.changeaudiodeviceautocontentcell` (parameter
-  `audio device`, a Settings > Speech device name) sets the speaking voice's device and saves the user.
-  `Email.Speak`, `Sms.Speak` and `Speech.SpeakClipboard` call `Speak` with `blockUntilSpeechStopped` false, so the
-  cell goes on at once. `DesktopSpeechEngine.Speak` sets the device once per text piece. A piece is the whole text,
-  unless a message bank recording matches part of it (`TextRecordingSplitter`). So a cell can switch to the
-  headphones, speak, wait (1.5 s on a fast machine), and switch back while the reading goes on in the headphones.
-  The online voice path builds its own sound player, also once per reading. Not yet heard on a device.
+- **Email and SMS: move the speaking voice to the headphones.** A stored `internal.changeaudiodeviceautocontentcell`
+  command does nothing useful: `GetAudioDevice` casts the `audio device` parameter to `IAudioDeviceIdentity`, and
+  a grid file can only hold text. Seen 2026-11-09 on a test machine: a cell with it before `Email.Speak` read on the
+  speaker. Grid 3's own auto-content cells (`Speech.ChangeAudioDeviceAutoContent`, one per audio device, in the
+  order of `ISpeechService.Devices`) pass the real device. `AutoContentSource.ShouldExecuteUserCommands` is true,
+  so the cell's own commands (`Email.Speak`, `Sms.Speak`) run too. The device change is saved and stays until a
+  cell naming another device is pressed. `Email.Speak`, `Sms.Speak` and `SpeakClipboard` do not wait for the
+  reading to end (`blockUntilSpeechStopped` false). Whether the device command runs before the cell's own
+  commands is not yet heard (Headphone Test, Devices page, test 15).
 
 ### Page scripts in commandids (Grid 3 3.0.93, read 2026-11-06)
 
