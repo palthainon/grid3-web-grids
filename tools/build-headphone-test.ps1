@@ -54,6 +54,7 @@ function Grid($gridName, $columns, $rows, $cells) {
 
 $homeGrid = "$name - Home"
 $deviceGrid = "$name - Devices"
+$copyGrid = "$name - Cells to copy"
 $webGrid = "$name - Web"
 $emailGrid = "$name - Email"
 $textGrid = "$name - Texts"
@@ -70,6 +71,7 @@ $grids = [ordered]@{
             "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' '00:00:04.0000000')$(Param 'cancellable' 1)</Command>")
         Cell 0 2 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 1 2 'Device test' @("<Command ID=`"Jump.To`">$(Param 'grid' $deviceGrid)</Command>")
+        Cell 3 1 'Cells to copy' @("<Command ID=`"Jump.To`">$(Param 'grid' $copyGrid)</Command>")
         Cell 2 2 'Email test' @("<Command ID=`"Jump.To`">$(Param 'grid' $emailGrid)</Command>")
         Cell 3 2 'Text message test' @("<Command ID=`"Jump.To`">$(Param 'grid' $textGrid)</Command>")
         # Sign-in checks for web mail and texts in Grid 3's browser. A person signs in; agents never enter passwords.
@@ -78,6 +80,15 @@ $grids = [ordered]@{
         (WebCell 2 1 'Google Messages' 'https://messages.google.com/web')
         # Jump.Home only reaches this set's own start grid; Grid Explorer is the way out of the set.
         Cell 3 0 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+    )
+    # Plain device cells (no extra commands) to copy into an email or text grid in Edit mode.
+    $copyGrid = Grid $copyGrid 4 3 @(
+        DeviceCell 0 0 @()
+        DeviceCell 1 0 @()
+        Cell 2 0 'Copy both device cells (Edit mode)' @()
+        Cell 0 2 'Speaker check' @(SpeakNow 'This plays on the device picked last.' 0)
+        Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
+        Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
     $deviceGrid = Grid $deviceGrid 6 3 @(
         foreach ($i in 0..3) { DeviceCell $i 0 @(SpeakNow 'Test fifteen. This should play on the device this cell names.' 0) }
