@@ -66,7 +66,7 @@ Dropped from the old WhatsApp keyboard: Quick msg and Emojis (Emojis is still on
 Fix, Del word and the Tools commands (Grid 3 `Action.*` text commands; Del letter already worked).
 
 Switch scan groups on Home (2026-11-06): group 1 messages (Read msg, Prev msg, Reply, Next msg, Read options,
-Type, Emojis, Option 1, Option 2, Option 3), group 2 the chat column, group 3 Fast Talker, Rest and More. More Tools (2026-11-08): group 1 column 0 (Back at
+Type, Emojis, Option 1, Option 2, Option 3), group 2 the chat column, group 3 Back (opens Fast Talker), Rest and More. More Tools (2026-11-08): group 1 column 0 (Back at
 0,0, then the item controls), group 2 the rail pages, group 3 the tools (Grid explorer at 9,5).
 The user mostly stays in Main chat, so messages come first.
 
