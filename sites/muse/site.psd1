@@ -38,9 +38,10 @@
 
     # Switch scan groups on Home: group 1 is messages (most used), 2 the chat column, 3 Fast Talker, Rest and More.
     ScanBlocks = @{
-        # Keyboards: group 1 is the controls (rows 0 to 2), then one group per key row, so a switch user picks
-        # a row first (accessibility review 2026-11-08: 29 letters in one group took up to 31 steps).
-        'Keyboard' = @{ '0,3' = 2; '1,3' = 2; '2,3' = 2; '3,3' = 2; '4,3' = 2; '5,3' = 2; '6,3' = 2; '7,3' = 2; '8,3' = 2; '9,3' = 2; '0,4' = 3; '1,4' = 3; '2,4' = 3; '3,4' = 3; '4,4' = 3; '5,4' = 3; '6,4' = 3; '7,4' = 3; '8,4' = 3; '9,4' = 3; '0,5' = 4; '1,5' = 4; '2,5' = 4; '3,5' = 4; '4,5' = 4; '6,5' = 4; '7,5' = 4; '8,5' = 4; '9,5' = 4 }
+        # Keyboard: the letters, digits key and full stop are one group, scanned key by key, as on the user's
+        # email keyboard. Row groups were tried on 2026-11-08; the operator asked for key by key again.
+        'Keyboard' = @{ '0,3' = 2; '1,3' = 2; '2,3' = 2; '3,3' = 2; '4,3' = 2; '5,3' = 2; '6,3' = 2; '7,3' = 2; '8,3' = 2; '9,3' = 2; '0,4' = 2; '1,4' = 2; '2,4' = 2; '3,4' = 2; '4,4' = 2; '5,4' = 2; '6,4' = 2; '7,4' = 2; '8,4' = 2; '9,4' = 2; '0,5' = 2; '1,5' = 2; '2,5' = 2; '3,5' = 2; '4,5' = 2; '6,5' = 2; '7,5' = 2; '8,5' = 2; '9,5' = 2 }
+        # Punctuation: group 1 the controls (rows 0 to 2), then one group per key row (review 2026-11-08).
         'Keyboard - Punctuation' = @{ '0,3' = 2; '1,3' = 2; '2,3' = 2; '3,3' = 2; '4,3' = 2; '5,3' = 2; '6,3' = 2; '7,3' = 2; '8,3' = 2; '9,3' = 2; '0,4' = 3; '1,4' = 3; '2,4' = 3; '3,4' = 3; '4,4' = 3; '5,4' = 3; '6,4' = 3; '7,4' = 3; '8,4' = 3; '9,4' = 3; '0,5' = 4; '1,5' = 4; '2,5' = 4; '3,5' = 4; '4,5' = 4; '6,5' = 4; '7,5' = 4; '8,5' = 4; '9,5' = 4 }
         # More Tools: one group per column: item controls (with Back), rail pages, then tools.
         'More Tools' = @{ '8,0' = 2; '8,1' = 2; '8,2' = 2; '8,3' = 2; '8,4' = 2; '8,5' = 2; '9,0' = 3; '9,1' = 3; '9,2' = 3; '9,3' = 3; '9,4' = 3; '9,5' = 3 }
