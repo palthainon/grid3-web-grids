@@ -30,10 +30,13 @@ $global:LASTEXITCODE = 0
 if ($LASTEXITCODE -ne 0) { throw "Check failed, not importing: $GridSet" }
 
 if (-not (Test-Path -LiteralPath $gridExe)) { throw "Grid 3 not found at $gridExe" }
-$running = @(Get-Process -Name 'Grid 3' -ErrorAction SilentlyContinue).Count -gt 0
+# Never start Grid 3: it opens on its Users screen, where only a person can press Open, and a file sent then
+# is not imported (seen 2026-11-06 and 2026-11-08).
+if (-not @(Get-Process -Name 'Grid 3' -ErrorAction SilentlyContinue).Count) {
+    throw "Grid 3 is not running. Ask a person to open Grid 3 on the user's profile, then run this again."
+}
 Start-Process -FilePath $gridExe -ArgumentList ('"{0}"' -f $GridSet)
 
 Write-Output "Sent to Grid 3: $GridSet"
-if ($running) { Write-Output 'Grid 3 was already running. It adds the set as a new copy ("Added <name> (2)").' }
-else { Write-Output 'Grid 3 was not running and is starting. Seen 2026-11-06: a file sent during startup gets no prompt. Run this again once Grid 3 is open.' }
-Write-Output 'If no prompt appears, import through Grid Explorer instead and note it in the ticket.'
+Write-Output 'Grid 3 adds the set as a new copy ("Added <name> (2)"). If nothing happens, Grid 3 may be on its Users screen:'
+Write-Output 'a person opens the profile, then run this again, or imports through Grid Explorer.'
