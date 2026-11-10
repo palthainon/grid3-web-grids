@@ -31,7 +31,7 @@ $zip = [IO.Compression.ZipFile]::OpenRead((Resolve-Path $GridSet))
 try {
     $styleDoc = Read-Entry $zip 'Settings0/Styles/styles.xml'
     $settings = Read-Entry $zip 'Settings0/settings.xml'
-    $styles = @{}; foreach ($s in $styleDoc.SelectNodes('//Styles/Style')) { $styles[$s.Key] = $s }
+    $styles = @{}; if ($styleDoc) { foreach ($s in $styleDoc.SelectNodes('//Styles/Style')) { $styles[$s.Key] = $s } }   # some sets have no styles.xml
     $startGrid = $settings.DocumentElement.StartGrid
     $grids = [ordered]@{}
     foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '^Grids/[^/]+/grid\.xml$' } | Sort-Object FullName)) {
@@ -109,7 +109,9 @@ foreach ($name in $grids.Keys) {
     while ($queue.Count) {
         $g = $queue.Dequeue(); if (-not $seen.Add($g)) { continue }
         foreach ($t in $jumpsTo[$g]) { if ($grids.Contains($t)) { $queue.Enqueue($t) } }
-        if ('Jump.Back' -in @($cells[$g] | ForEach-Object { $_.Commands })) { foreach ($p in $parents[$g]) { $queue.Enqueue($p) } }
+        $gIds = @($cells[$g] | ForEach-Object { $_.Commands })
+        if ('Jump.Back' -in $gIds) { foreach ($p in $parents[$g]) { $queue.Enqueue($p) } }
+        if ('Jump.Home' -in $gIds) { $queue.Enqueue($startGrid) }   # Jump.Home opens the start grid (settings.xml StartGrid)
     }
     $leavesSet = @($grids.Keys | Where-Object { $seen.Contains($_) } | ForEach-Object { $cells[$_] } | Where-Object { @($_.Commands | Where-Object { $_ -in 'Settings.ChangeGridSet', 'Settings.GridExplorer' }).Count }).Count
     if (-not $seen.Contains($startGrid) -and -not $leavesSet) { Add-Finding 'fix' 'exit' $name "Cannot get back to the start grid ($startGrid) or out of the grid set" }
