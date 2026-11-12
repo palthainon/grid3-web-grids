@@ -8,6 +8,7 @@ disabilities communicate, so be careful and test before you hand anything over.
 1. [docs/grid3-internals.md](docs/grid3-internals.md): what Grid 3 can and cannot do, with exact command IDs.
 2. [docs/templates.md](docs/templates.md): how `tools/build-site.ps1` builds a site from a stock set.
 3. [.claude/skills/site-grid/SKILL.md](.claude/skills/site-grid/SKILL.md): the build, test and live-check loop.
+   [.claude/skills/grid3-press/SKILL.md](.claude/skills/grid3-press/SKILL.md): press Grid 3 cells yourself on a test machine.
    `tools/evaluate-gridset.ps1` and `tests/site-audit.js`: evaluate a grid set and its site for access and readability.
 4. `docs/sites/<site>.md` for the site you are changing.
 
@@ -42,7 +43,14 @@ disabilities communicate, so be careful and test before you hand anything over.
 - The stock Start cell jumps before it navigates. Wait for the site to load (`CommandExecution.Wait`) before
   the script loads, or a fresh install does nothing.
 - Computer use cannot press Grid 3 cells: Grid 3 has `uiAccess`, so Windows blocks the input. Hover outlines
-  are not presses. On a test machine, a person can run `tools/install-grid3-click.ps1` once as administrator.
-  Then run `tools/grid3-click.ps1 -X <x> -Y <y>` (physical pixels) to press the cell at that point. Test page scripts on the live site in a signed-in browser tab instead.
+  are not presses. On a test machine, use the `grid3-press` skill: a person installs `tools/grid3-click.ps1`
+  once as administrator, then an agent presses cells itself. Test page scripts on the live site in a
+  signed-in browser tab.
+- When a cell does nothing, read Grid 3's log first:
+  `C:\Users\Public\Documents\Sensory Software\Diagnostic Logs\Grid 3.log`.
+- A program that a Run cell starts must live where Grid 3 can see it: `%ProgramData%` (`%ALLUSERSAPPDATA%`).
+  From the Claude desktop app, writes to `%APPDATA%` go to a private copy, and Grid 3 cannot find the file.
+- Grid 3's device volume cells (`ComputerControl.DeviceVolume`) change only the Windows default playback device.
+  For a named device, use `tools/device-volume.cs` (Headphone Test > Volume).
 - Websites cannot raise notifications in Grid 3. Use `templates/alert.js` while the site is open.
 - Sites keep UI state between visits (Muse's "Keep chat panel visible"). Model each state in the mock page.
