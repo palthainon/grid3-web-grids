@@ -42,6 +42,28 @@
     return i >= 0 ? list[i] : select(list, list.length - 1);
   }
 
+  // Prev and Next msg say who sent the message, when, and its first words. Muse draws no time on a message. It
+  // puts a time marker ("8:42 AM", or "Nov 11, 7:41 PM" on older days) in the log before each group of messages,
+  // and Muse's own replies have [data-hatch-assistant-message-body]. Read on the signed-in page 2026-11-12.
+  const TIME_MARK = /^([A-Z][a-z]{2} \d{1,2}, )?\d{1,2}:\d{2} [AP]M$/;
+  function sentAt(message) {
+    const log = message.closest('[role="log"]');
+    let row = message;
+    while (row.parentElement && row.parentElement !== log) row = row.parentElement;
+    for (let e = row.previousElementSibling; e; e = e.previousElementSibling) {
+      const text = clean(e.innerText || '');
+      if (TIME_MARK.test(text)) return text;
+    }
+    return '';
+  }
+  function preview(message) {
+    if (!message) return 'No message';
+    const sender = message.querySelector('[data-hatch-assistant-message-body]') ? 'Muse' : 'You';
+    const words = clean(message.innerText || '').replace(/^(You|Muse):\s*/, '').split(' ');
+    const start = words.slice(0, 12).join(' ') + (words.length > 12 ? ' ...' : '');
+    return [sender, sentAt(message)].filter(Boolean).join(', ') + '. ' + start;
+  }
+
   function messageBox() {
     return document.querySelector('textarea[aria-label="Message"]');
   }
@@ -386,7 +408,9 @@
     'Home/Read_Selected_Message': () => clean(current()?.innerText || 'No message'),
     // Same text into the headphones (templates/headphone.js); the cell must run WebBrowser.NextElement after it.
     'Home/Read_Selected_Message_Headphones': () => grid3HeadphoneSay(clean(current()?.innerText || 'No message')),
-    'Home/Center_Current_Message': () => { current()?.scrollIntoView({ block: 'center' }); },
+    // Prev and Next msg run this after the move (headphones, then WebBrowser.NextElement, as Read in headphones).
+    'Home/Preview_Selected_Message_Headphones': () => grid3HeadphoneSay(preview(current())),
+    'Home/Center_Current_Message':() => { current()?.scrollIntoView({ block: 'center' }); },
     'Home/Jump_To_End_Of_Conversation': () => { const list = messages(); select(list, list.length - 1); },
     'Home/Reply_To_Message': () => { current()?.querySelector('button[aria-label="Reply"]')?.click(); },
     'Home/Previous_Chat': () => moveChat(-1),
