@@ -410,6 +410,15 @@
     }
     return [];
   }
+  function readOptions() {
+    const card = approvalCard();
+    if (card) return readApproval(card);
+    if (openReview()) return 'A task needs review. Opening it. Press Read options again.';
+    if (approvalWaiting() && !musePanel()) { togglePanel(); return 'Muse needs approval. The Muse panel is open. Press Read options again.'; }
+    const list = options().map((o, i) => `${i + 1}, ${clean(o.innerText || label(o))}.`);
+    return list.length ? list.join(' ') : 'No options';
+  }
+
   function chooseOption(n) {
     const card = approvalCard();
     if (card) return chooseApproval(card, n);
@@ -438,12 +447,10 @@
     'Home/Read_Selected_Chat_Name': () => chat.name,
     'Chats/Toggle': () => { toggleChats(); },
     'Chats/Select': () => selectChat(),
-    'Options/Read': () => {
-      const card = approvalCard();
-      if (card) return readApproval(card);
-      if (openReview()) return 'A task needs review. Opening it. Press Read options again.';
-      if (approvalWaiting() && !musePanel()) { togglePanel(); return 'Muse needs approval. The Muse panel is open. Press Read options again.'; }
-      const list = options().map((o, i) => `${i + 1}, ${clean(o.innerText || label(o))}.`); return list.length ? list.join(' ') : 'No options'; },
+    'Options/Read': () => readOptions(),
+    // Home's Read options cell: the same text into the headphones (templates/headphone.js); the cell runs
+    // WebBrowser.NextElement after it (operator, 2026-11-12).
+    'Options/Read_Headphones': () => grid3HeadphoneSay(readOptions()),
     'Options/Option_1': () => chooseOption(1),
     'Options/Option_2': () => chooseOption(2),
     'Options/Option_3': () => chooseOption(3),

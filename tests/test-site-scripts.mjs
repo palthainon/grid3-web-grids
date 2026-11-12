@@ -123,6 +123,8 @@ try {
     check('Chats/Toggle in a new side chat goes back to Main chat and opens the panel', (await rowCount()) === 3 && await page.locator('[data-testid="hatch-thread-row"][aria-current="page"]').textContent() === 'Main chat');
     await grid3(page, 'Muse/Chats/Toggle');
     await page.waitForTimeout(300);
+    await grid3(page, 'Muse/Options/Read_Headphones');
+    check('Read options in the headphones gives the same text to the hotspot', await page.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b[b.length - 1]._grid_getHotSpotAuditoryFeedbackText(); }) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     check('Options/Read lists the newest message options', (await grid3(page, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     check('Option_2 presses the second option and says it', (await grid3(page, 'Muse/Options/Option_2')) === 'Give me a summary' && JSON.stringify(await page.evaluate(() => window.chosen)) === '["Give me a summary"]');
     // Approvals: the short card first, Review opens the full card, then the option cells read and press its buttons.
