@@ -44,7 +44,7 @@ function DeviceCell($x, $y, $commands) {
 }
 # Runs device-volume.exe with no window. Grid 3 expands %APPDATA% in FileName (not %LOCALAPPDATA%: it has its own fixed list).
 function VolumeCell($x, $y, $caption, $device, $change) {
-    $arguments = '"' + $device + '" ' + $change
+    $arguments = if ($device) { '"' + $device + '" ' + $change } else { $change }
     Cell $x $y $caption @("<Command ID=`"ComputerControl.Run`">$(Param 'FileName' '%APPDATA%\grid3-web-grids\device-volume.exe')" +
         "$(Param 'Arguments' $arguments)$(Param 'AllowSwitchTo' 0)$(Param 'RunCommandType' 'Program')</Command>")
 }
@@ -114,6 +114,8 @@ $grids = [ordered]@{
         Cell 2 0 'Speaker check' @(SpeakNow 'This plays on the device picked for speech.' 0)
         Cell 2 1 'Headphones check' @(SpeakNow 'This is the audio feedback voice.' 1)
         Cell 3 0 'Copy the volume cells (Edit mode)' @()
+        # Logs each device's volume, the Windows default and the apps on each device. Press it while media plays.
+        VolumeCell 3 1 'Log volume status' '' 'status'
         Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
         Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
