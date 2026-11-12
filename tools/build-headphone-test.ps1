@@ -8,11 +8,15 @@
 # device object (3.0.104, read 2026-11-09). The speaking voice stays on the last device pressed.
 # Volume page: cells that change the volume of one named device through tools\device-volume.exe (install it with
 # tools\install-device-volume.ps1). Grid 3's own device volume cells change only the Windows default device.
-# Usage: pwsh -File tools\build-headphone-test.ps1 [-SpeakerName 'USB AUDIO CODEC'] [-HeadphoneName 'AB13X']
+# Usage: pwsh -File tools\build-headphone-test.ps1 [-SpeakerName '<name>'] [-HeadphoneName '<name>'] [-Output <path>]
+# Keep a user's real device names out of this public repo: build their copy elsewhere with -Output.
 param(
-    # Part of each device's Windows name, as device-volume.exe logs it. Defaults: a USB speaker and a USB headset.
-    [string]$SpeakerName = 'USB AUDIO CODEC',
-    [string]$HeadphoneName = 'AB13X'
+    # Part of each device's Windows name, as device-volume.exe status logs it. The placeholders match no device,
+    # so the published set's volume cells only log "no device matches" until a copy is built with real names.
+    [string]$SpeakerName = 'SPEAKER NAME',
+    [string]$HeadphoneName = 'HEADPHONE NAME',
+    # Where to write the .gridset. Default: grids\Headphone Test.gridset in this repo.
+    [string]$Output
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -194,7 +198,8 @@ $settingsDir = New-Item -ItemType Directory -Force (Join-Path $work 'Settings0')
 [void]$map.Append('<Entry StaticFile="Settings0\settings.xml"><DynamicFiles /></Entry></Entries></FileMap>')
 [IO.File]::WriteAllText((Join-Path $work 'FileMap.xml'), $map.ToString(), $utf8Bom)
 
-$output = Join-Path $root "grids\$name.gridset"
+$output = if ($Output) { [IO.Path]::GetFullPath($Output) } else { Join-Path $root "grids\$name.gridset" }
+New-Item -ItemType Directory -Force (Split-Path $output) | Out-Null
 if (Test-Path $output) { Remove-Item $output }
 [IO.Compression.ZipFile]::CreateFromDirectory($work, $output)
 Remove-Item $work -Recurse -Force
