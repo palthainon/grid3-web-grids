@@ -30,13 +30,19 @@ The Volume page's cells run `%ALLUSERSAPPDATA%\grid3-web-grids\device-volume.exe
 Install or update it on each computer with `pwsh -NoProfile -File tools\install-device-volume.ps1`. It builds
 `tools/device-volume.cs` with the C# compiler in Windows (no download) and prints a status.
 
-The device names come from build parameters: `-SpeakerName` (default `USB AUDIO CODEC`) and `-HeadphoneName`
-(default `AB13X`). The match ignores case and repeated spaces. Rebuild with the names from a status run when a
-computer's devices differ.
+The device names come from build parameters: `-SpeakerName` and `-HeadphoneName`. The published set uses the
+placeholders `SPEAKER NAME` and `HEADPHONE NAME`, which match no device, so its volume cells only log
+"no device matches". For a real computer, take part of each name from a status run and build a private copy:
+
+```powershell
+pwsh -NoProfile -File tools\build-headphone-test.ps1 -SpeakerName '<speaker>' -HeadphoneName '<headset>' -Output <path outside this repo>
+```
+
+The match ignores case and repeated spaces. Keep a user's device names out of this public repo.
 
 ## Tested
 
 - 2026-11-12, test machine, Grid 3 3.0.104: Log volume status and Speaker louder pressed with `grid3-click`.
-  Grid 3 started the exe both times (Grid 3.log), and the exe logged. The defaults name devices that machine does
+  Grid 3 started the exe both times (Grid 3.log), and the exe logged. The cells named devices that machine does
   not have, so no volume changed in Grid 3. The exe changed volume when run outside Grid 3.
 - Device and headphone results are in the private ticket for the user's device.
