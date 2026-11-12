@@ -135,6 +135,16 @@ First check:
 - Checked: New side chat, Select chat and Chats on the signed-in page in Chrome 2026-11-12. The approval cells
   passed against the mock only. They are untested on a real approval card, and untested in Grid 3.
 
+## Only Read msg talks aloud (2026-11-12)
+
+Rule from the operator: only Speak and Read msg talk aloud. Every other Muse cell says its result in the
+headphones (a `*_Headphones` function, a 1 s wait, `WebBrowser.NextElement`). Read in headphones, Prev and Next msg,
+Prev and Next chat, Read options, Previous and Next option, Select, and More's Prev, Next, Read and Open item.
+Check a build with: no `WebBrowser.SpeakJavascriptFunction` in the set except Home 9,3 Read msg.
+
+Home now: 8,4 Previous option, 9,4 Next option, 0,3 Select. 8,5 is blank: the user's scan starts at the first
+cell every time, so one Select is enough (operator).
+
 ## Up, Down and Select (2026-11-12, later)
 
 Operator asked for an up and down selector in place of Option 1 to 3. Home 8,4 is Up, 9,4 is Down, 8,5 is Select,

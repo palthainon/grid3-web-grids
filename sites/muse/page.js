@@ -508,6 +508,14 @@
     'Options/Up_Headphones': () => moveOptionHeadphones(-1),
     'Options/Down_Headphones': () => moveOptionHeadphones(1),
     'Home/Select': () => selectOutlined(),
+    // Only Speak and Read msg talk aloud (operator, 2026-11-12). Every other cell says its result in the
+    // headphones: the cell runs one of these, a 1 s wait and WebBrowser.NextElement. sayLater works the text out
+    // at NextElement, so a chat name that appears a moment after the chat panel opens is said too.
+    'Home/Select_Headphones': () => grid3HeadphoneSay(selectOutlined()),
+    'Home/Read_Selected_Chat_Name_Headphones': () => sayLater(() => chat.name || 'No chat'),
+    'Items/Read_Headphones': () => sayLater(() => item.name || 'Nothing outlined'),
+    'Items/Read_All_Headphones': () => { const el = outlined(); return grid3HeadphoneSay(el ? readable(el) : 'Nothing outlined'); },
+    'Items/Open_Headphones': () => grid3HeadphoneSay(openItem()),
     'Options/Option_1': () => chooseOption(1),
     'Options/Option_2': () => chooseOption(2),
     'Options/Option_3': () => chooseOption(3),
