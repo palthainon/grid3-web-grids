@@ -149,23 +149,86 @@
     Feed: '[data-testid="hatch-nav-system-item-66656564"]', Ideas: '[data-testid="hatch-nav-system-item-6964656173"]',
     Goals: '[data-testid="hatch-nav-system-item-676f616c73"]', Library: '[data-testid="hatch-nav-system-item-6c696272617279"]',
   };
+  // Every control Muse shows can be reached with Prev, Next and Open item (More Tools). The list is whatever is
+  // on top: an open menu, the search results, the top dialog (Settings with every section's controls), the Muse
+  // panel, the chat panel, a rail page's items, or on the chat page the selected message's controls and then the
+  // page's own controls. Inventory read on the signed-in page 2026-11-12 (docs/sites/muse.md).
+  // Never listed, so never pressed: choices that sign Philip out, wipe data, take payment or give Muse standing
+  // permission. Approval cards are answered with the option cells, one time only. In Settings, no choice that
+  // starts "Allow" either (a connector action set to Allow runs without asking).
+  const BLOCKED = /^(log out|reset muse|reset approvals to defaults|reset to defaults|delete|remove|disconnect|add link by stripe|add shop pay|always allow|allow always|allow for |allow all )/i;
+  const SETTINGS_BLOCKED = /^allow\b/i;
+  const THREAD_ROW = '[data-testid="hatch-thread-row"]';
+  const CONTROL = 'button, [role="button"], a[href], input[type="radio"], input[type="checkbox"], [role="switch"], [role="checkbox"], ' +
+    '[role="radio"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], select';
+  const isToggle = (el) => el.matches('input, [role="switch"], [role="checkbox"], [role="radio"], [role="menuitemcheckbox"], [role="menuitemradio"]');
+
+  // A control's spoken name: its label, plus on or off for a switch or choice, or "selected" for a pressed button.
+  function controlName(el) {
+    let text = clean(el.getAttribute('aria-label') || '') || firstLine(el);
+    if (el.matches('input') || !text) {
+      const holder = el.labels?.[0] || el.closest('label') || el.parentElement;
+      text = clean(el.getAttribute('aria-label') || '') || clean((holder?.innerText || '').split('\n').slice(0, 2).join('. '));
+    }
+    // A chat row's More thread actions (Pin, Rename, Archive) names its chat.
+    const row = el.closest(THREAD_ROW);
+    if (row && row !== el) text = `${text}, ${rowName(row)}`;
+    const on = el.matches('input') ? el.checked : el.getAttribute('aria-checked');
+    if (isToggle(el)) return `${text}, ${on === true || on === 'true' ? 'on' : 'off'}`;
+    if (el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-selected') === 'true') return `${text}, selected`;
+    return text;
+  }
+
+  // The usable controls under root, without text boxes, blocked choices and Close buttons (More has a Close cell,
+  // Home a Muse panel cell). A control inside another stays, such as a chat row's More thread actions, unless it
+  // only repeats the outer control's name.
+  function controls(root, test = visible) {
+    const found = [...root.querySelectorAll(CONTROL)].filter((e) => test(e) && !BLOCKED.test(controlName(e)) && !/^close( panel)?$/i.test(controlName(e)));
+    return found.filter((e) => !found.some((o) => o !== e && o.contains(e) && controlName(o) === controlName(e)));
+  }
+
+  const openMenu = () => all('[role="menu"]').pop();
   const settingsDialog = () => all('[role="dialog"]').find((d) => [...d.querySelectorAll('button')].some((b) => b.innerText.trim() === 'Log out'));
+  const within = (box) => (el) => { const r = el.getBoundingClientRect(), b = box.getBoundingClientRect(); return visible(el) && r.right > b.left && r.left < b.right; };
+  const musePanel = () => {
+    let box = all('[data-testid="hatch-status-panel-close"]')[0];
+    while (box && box.parentElement && !box.querySelector('button[aria-label="Activity"]')) box = box.parentElement;
+    return box && box.querySelector('button[aria-label="Activity"]') ? box : null;
+  };
+  const chatPanel = () => chatRows().length ? document.querySelector('[data-testid="hatch-side-chats-panel-shell"], [data-testid="hatch-side-chats-panel-sliding-surface"]') : null;
+
+  // The selected message (or the newest) and what Muse draws just after it, such as option buttons.
+  function messageControls() {
+    const list = messages();
+    const i = selectedIndex(list) >= 0 ? selectedIndex(list) : list.length - 1;
+    const log = document.querySelector('[role="log"][aria-label="Chat messages"]');
+    if (!log || i < 0) return [];
+    const mine = list[i], next = list[i + 1];
+    return controls(log).filter((e) => mine.contains(e) || ((mine.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING)
+      && (!next || (next.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_PRECEDING))));
+  }
 
   function items() {
+    const menu = openMenu();
+    if (menu) return controls(menu).filter((e) => !(settingsDialog() && SETTINGS_BLOCKED.test(controlName(e))));
     const results = all('[data-testid="command-palette-item"]');
     if (results.length) return results;
     const settings = settingsDialog();
-    if (settings) {
-      const buttons = all('button', settings);
-      return buttons.slice(0, buttons.findIndex((b) => b.innerText.trim() === 'Log out'));
-    }
-    // Any other dialog, such as Goal details opened from a search result: its headings, paragraphs and list
-    // entries, outermost only.
+    if (settings) return controls(settings).filter((e) => !SETTINGS_BLOCKED.test(controlName(e)));
+    // Any other dialog, such as Goal details: its headings, paragraphs and list entries, and its controls.
     const dialog = all('[role="dialog"]').pop();
     if (dialog) {
-      const blocks = all('h1, h2, h3, h4, p, li, [role="listitem"]', dialog).filter((e) => clean(e.innerText || ''));
-      return blocks.filter((e) => !blocks.some((o) => o !== e && o.contains(e)));
+      const ctl = controls(dialog);
+      const blocks = all('h1, h2, h3, h4, p, li, [role="listitem"]', dialog).filter((e) => clean(e.innerText || '') && !ctl.some((c) => c.contains(e) || e.contains(c)));
+      const outer = blocks.filter((e) => !blocks.some((o) => o !== e && o.contains(e)));
+      return [...outer, ...ctl].sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
     }
+    // The Muse panel's tabs sit side by side; only the shown tab is inside the panel.
+    const panel = musePanel();
+    if (panel) return controls(panel, within(panel));
+    // A row's More thread actions button shows only on hover, but a click still opens its menu.
+    const side = chatPanel();
+    if (side) return controls(side, (e) => visible(e) || visible(e.closest(THREAD_ROW)));
     const path = location.pathname;
     if (path.startsWith('/feed')) return all('[data-testid="hatch-feed-unit"]');
     if (path.startsWith('/ideas')) return all('[role="listitem"]').map((li) => li.querySelector('button')).filter((b) => b && !b.closest('[role="log"]'));
@@ -175,7 +238,10 @@
         .filter(Boolean);
     }
     if (path.startsWith('/library')) return [...all('a[href^="/library"]'), ...all('[data-testid="hatch-library-card-motion"]')];
-    return [];
+    // The chat page, a space or any other page: the message's controls, then the page's own controls. The rail
+    // pages already have cells on More, so they are left out.
+    const rail = Object.values(RAIL).join(', ');
+    return [...messageControls(), ...controls(document.body).filter((e) => !e.closest('[role="log"]') && !e.matches(rail))];
   }
 
   // The whole item, line by line, without its button labels (a feed card: headline, time, summary).
@@ -184,6 +250,7 @@
     return (el.innerText || label(el)).split('\n').map(clean).filter((line) => line && !buttons.includes(line)).join('. ').slice(0, 1500);
   }
   const outlined = () => items().find((e) => e.classList.contains(ITEM_MARK));
+  const itemName = (el) => (el.matches(CONTROL) ? controlName(el) : firstLine(el)) || 'No name';
 
   function clearItems() { document.querySelectorAll('.' + ITEM_MARK).forEach((e) => e.classList.remove(ITEM_MARK)); item.name = ''; }
 
@@ -195,7 +262,7 @@
     list.forEach((e) => e.classList.remove(ITEM_MARK));
     list[next].classList.add(ITEM_MARK);
     list[next].scrollIntoView({ block: 'center' });
-    item.name = firstLine(list[next]);
+    item.name = itemName(list[next]);
   }
 
   // Opens the outlined item. A feed card opens through its Discuss button, a Library card through its
@@ -203,13 +270,16 @@
   function openItem() {
     const el = items().find((e) => e.classList.contains(ITEM_MARK));
     if (!el) return 'Nothing outlined';
-    const name = firstLine(el);
+    const name = itemName(el);
+    if (BLOCKED.test(name) || (settingsDialog() && SETTINGS_BLOCKED.test(name))) return 'Ask for help with that';
     const buttons = [...el.querySelectorAll('button')];
     const target = buttons.find((b) => b.innerText.trim() === 'Discuss')
       || (el.matches('[data-testid="hatch-library-card-motion"]') && buttons.find((b) => !b.getAttribute('aria-label'))) || el;
     clearItems();
+    // Menu buttons (Settings, More options, More thread actions, Avatar options) open on pointerdown.
+    if (target.matches('[aria-haspopup], [aria-expanded]')) target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     target.click();
-    return name;
+    return isToggle(target) ? controlName(target) : name;
   }
 
   const searchBox = () => all('[data-testid="command-palette-search-input"]')[0];
@@ -218,6 +288,8 @@
   // Closes the top dialog with its Close button (Settings, Goal details), or with Escape (search).
   function closeItem() {
     clearItems();
+    const menu = openMenu();
+    if (menu) { escape(menu); return; }
     if (searchBox()) { escape(searchBox()); return; }
     const dialog = all('[role="dialog"]').pop();
     const close = dialog && [...dialog.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Close');
@@ -246,6 +318,8 @@
   // pressed, from the primary button or the "More allow options" menu. Read from Muse's code 2026-11-12.
   const ONCE = ['allow once', 'allow'];
   const approvalCard = () => all('[data-testid="hatch-inline-approval-card"]').pop();
+  // Muse's avatar is labelled "Muse, needs approval" while a request waits that may not be on screen.
+  const approvalWaiting = () => !!document.querySelector('[aria-label$=", needs approval"]');
   const textOf = (el) => clean(el.innerText || label(el));
   const findOnce = (els) => { for (const want of ONCE) { const b = els.find((e) => textOf(e).toLowerCase() === want); if (b) return b; } return null; };
 
@@ -274,7 +348,7 @@
 
   function deny(card) {
     const buttons = all('button', card);
-    const b = buttons.find((e) => /^deny$/i.test(textOf(e))) || buttons.find((e) => /^deny/i.test(textOf(e)));
+    const b = buttons.find((e) => /^deny$/i.test(textOf(e))) || buttons.find((e) => /^deny\b/i.test(textOf(e)));
     if (!b) return 'No deny choice. Ask for help.';
     b.click();
     return 'Denied';
@@ -323,6 +397,7 @@
     'Options/Read': () => {
       const card = approvalCard();
       if (card) return `${card.getAttribute('aria-label') || 'Muse needs approval'}. 1, Allow once. 2, Deny. 3, Read the request.`;
+      if (approvalWaiting() && !musePanel()) { togglePanel(); return 'Muse needs approval. The Muse panel is open. Press Read options again.'; }
       const list = options().map((o, i) => `${i + 1}, ${clean(o.innerText || label(o))}.`); return list.length ? list.join(' ') : 'No options'; },
     'Options/Option_1': () => chooseOption(1),
     'Options/Option_2': () => chooseOption(2),
@@ -372,7 +447,7 @@
   if (window.grid3Alert && !window.__grid3ApprovalWatch) {
     let last = null;
     window.__grid3ApprovalWatch = setInterval(() => {
-      const card = approvalCard() || null;
+      const card = approvalCard() || document.querySelector('[aria-label$=", needs approval"]');
       if (card && card !== last) { window.__grid3_alerts = (window.__grid3_alerts || 0) + 1; window.grid3Alert.chime(); window.grid3Alert.banner('Muse needs your approval'); }
       last = card;
     }, 1500);

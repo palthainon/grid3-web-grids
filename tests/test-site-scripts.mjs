@@ -89,6 +89,12 @@ try {
     await grid3(page, 'Muse/Chats/Toggle');
     await page.waitForTimeout(600);
     check('Chats/Toggle opens the panel', (await rowCount()) === 3);
+    const panelItems = [];
+    for (let i = 0; i < 4; i++) { await grid3(page, 'Muse/Items/Next'); panelItems.push(await grid3(page, 'Muse/Items/Read')); }
+    check('chat panel: items are its controls, with the hidden More thread actions', JSON.stringify(panelItems) === JSON.stringify(['Side chat options', 'Main chat', 'More thread actions, Main chat', 'Weekly briefing']), JSON.stringify(panelItems));
+    await grid3(page, 'Muse/Items/Previous');
+    await grid3(page, 'Muse/Items/Open');
+    check('chat panel: Open item presses the hidden More thread actions', JSON.stringify(await page.evaluate(() => window.threadActions)) === '["Main chat"]');
     await grid3(page, 'Muse/Chats/Toggle');
     await page.waitForTimeout(300);
     check('Chats/Toggle closes it again', (await rowCount()) === 0);
@@ -235,11 +241,28 @@ try {
     check('Search: keyboard Back closes an empty search', await page.locator('[data-testid="hatch-quick-search-frame"]').count() === 0);
     await runBuilt(page, ids['Places/Settings']);
     await page.waitForTimeout(400);
-    check('Settings: items are the sections, never Log out', (await step('Items/Next')) === 'General' && (await step('Items/Next')) === 'Connectors' && (await step('Items/Next')) === 'General');
+    const walk = async (n) => { const said = []; for (let i = 0; i < n; i++) said.push(await step('Items/Next')); return said; };
+    const settingsSaid = await walk(7);
+    check('Settings: items are the sections and every control in the section, never Log out, Reset Muse or Close',
+      JSON.stringify(settingsSaid) === JSON.stringify(['General', 'Connectors', 'Light', 'Dark, selected', 'Always ask, on', 'Ask for some actions, off', 'General']), JSON.stringify(settingsSaid));
+    await walk(5);
+    check('Settings: Open item on a choice turns it on and says so', (await runBuilt(page, ids['Items/Open'])) === 'Ask for some actions, on');
     await runBuilt(page, ids['Items/Close']);
     check('Settings: Close shuts the dialog', await page.locator('[role="dialog"]').count() === 0 && !(await clicked()).includes('Log out'));
     await runBuilt(page, ids['Places/Chat']);
     check('Chat: back to the chat', await page.evaluate(() => location.pathname === '/' && !document.querySelector('main').hidden));
+    // Chat page: the newest message's controls (options, Reply, React), then the page's own controls.
+    const chatSaid = await walk(6);
+    check('Chat: items are the message controls, then the page controls', JSON.stringify(chatSaid) === JSON.stringify(['Tell me more', 'Give me a summary', 'Start over', 'Reply', 'React', 'Settings']), JSON.stringify(chatSaid));
+    await runBuilt(page, ids['Items/Open']);
+    await page.waitForTimeout(300);
+    check('Chat: Open item on the Settings menu button opens the menu, and its entries become the items', (await step('Items/Next')) === 'Keyboard shortcuts');
+    await runBuilt(page, ids['Items/Close']);
+    check('Chat: Close shuts the menu', await page.locator('[role="menu"]').count() === 0);
+    await runBuilt(page, ids['Panel/Toggle']);
+    const panelSaid = await walk(3);
+    check('Muse panel: items are its tabs and entries, not Close panel', JSON.stringify(panelSaid) === JSON.stringify(['Activity, selected', 'Approvals', 'Send this email in Gmail']), JSON.stringify(panelSaid));
+    await runBuilt(page, ids['Panel/Toggle']);
     await page.reload();
     check('after a page load, a cell loads the script from localStorage without the loader', (await runBuilt(page, ids['Home/Read_Selected_Message'])).startsWith('Muse: answer 12'));
     await page.reload();
