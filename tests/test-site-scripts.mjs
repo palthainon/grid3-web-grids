@@ -90,6 +90,8 @@ try {
     await grid3(page, 'Muse/Home/Next_Chat');
     check('Next_Chat outlines the chat after the current one', JSON.stringify(await marked()) === '["Weekly briefing"]' && (await grid3(page, 'Muse/Home/Read_Selected_Chat_Name')) === 'Weekly briefing');
     await grid3(page, 'Muse/Home/Next_Chat');
+    await grid3(page, 'Muse/Home/Read_Selected_Chat_Name_Headphones');
+    check('Prev and Next chat say the chat in the headphones', await page.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b[b.length - 1]._grid_getHotSpotAuditoryFeedbackText(); }) === 'Sports roundup');
     check('Read chat names the outlined chat (first line only)', (await grid3(page, 'Muse/Home/Read_Selected_Chat_Name')) === 'Sports roundup');
     await grid3(page, 'Muse/Home/Previous_Chat');
     check('Previous_Chat moves the outline back and opens nothing', JSON.stringify(await marked()) === '["Weekly briefing"]' && JSON.stringify(await page.evaluate(() => window.opened)) === '[]');
@@ -158,6 +160,9 @@ try {
     await decisions();
     // Message options: Up from nothing outlines the last option; Select presses it.
     check('Up outlines the last message option', (await say('Muse/Options/Up_Headphones')) === 'Start over');
+    await say('Muse/Options/Up_Headphones');
+    check('Select in the headphones presses the option and says it there', (await say('Muse/Home/Select_Headphones')) === 'Give me a summary');
+    await say('Muse/Options/Up_Headphones');
     check('Select presses the outlined message option', (await grid3(page, 'Muse/Home/Select')) === 'Start over' && (await page.evaluate(() => window.chosen.at(-1))) === 'Start over');
     check('with no approval, the options are the message options again', (await grid3(page, 'Muse/Options/Read')).startsWith('1, Tell me more.'));
     await grid3(page, 'Muse/Panel/Toggle');
@@ -179,13 +184,16 @@ try {
   }
 
   if (!only || only === 'built') {
-    const ids = builtCommandIds('Muse.gridset');
+    const built = builtCommandIds('Muse.gridset');
+    // Cells now say their result in the headphones, so the tests read the plain functions (Items/Read and such)
+    // through the same built call: the cell's prefix with the other function's name.
+    const ids = new Proxy(built, { get: (t, k) => t[k] ?? (typeof k === 'string' && k.includes('/') ? t['Items/Next'].replace(/Items\.Next$/, k.replace('/', '.')) : undefined) });
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await context.route('https://muse.ai/**', (r) => r.fulfill({ contentType: 'text/html', body: readFileSync(join(here, 'muse-chat-mock.html'), 'utf8') }));
     const page = await context.newPage();
     await page.goto('https://muse.ai/');
     console.log('-- Muse.gridset commandids (mock page, no page script injected)');
-    check('built set carries every Muse command', ['Home/Read_Selected_Message', 'Home/Previous_Message', 'Home/Next_Message', 'Home/Next_Chat', 'Home/Focus_Message_Input', 'Home/Select', 'Chats/Toggle', 'Panel/Toggle'].every((k) => ids[k]), Object.keys(ids).join(', '));
+    check('built set carries every Muse command', ['Home/Read_Selected_Message', 'Home/Previous_Message', 'Home/Next_Message', 'Home/Next_Chat', 'Home/Focus_Message_Input', 'Home/Select_Headphones', 'Chats/Toggle', 'Panel/Toggle'].every((k) => built[k]), Object.keys(built).join(', '));
     check('commandids hold no space, hyphen or slash', Object.values(ids).every((id) => !/[ \-\/]/.test(id)));
     check('GridCommands absent before the first press', await page.evaluate(() => typeof window.GridCommands === 'undefined'));
     check('cell commandids are short calls; one loader per grid holds the script', Object.entries(ids).every(([k, id]) => k === 'Load' || id.length < 300) && ids['Load']?.length > 3000, `longest call ${Math.max(...Object.entries(ids).filter(([k]) => k !== 'Load').map(([, id]) => id.length))} chars`);
