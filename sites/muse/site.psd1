@@ -29,7 +29,7 @@
     # WhatsApp housekeeping calls with no Muse equivalent. They are removed; the rest of the cell stays.
     Ignore = @('Home/Show_Chat_List', 'Home/Cancel_Reply_To_Message')
     # Muse functions outside the messaging contract.
-    Extra  = @('Home/Read_Selected_Message_Headphones', 'Home/Preview_Selected_Message_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
+    Extra  = @('Home/Read_Selected_Message_Headphones', 'Home/Preview_Selected_Message_Headphones', 'Options/Read_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
                'Places/Chat', 'Places/Search', 'Places/Feed', 'Places/Ideas', 'Places/Goals', 'Places/Library', 'Places/Settings',
                'Items/Previous', 'Items/Next', 'Items/Read', 'Items/Read_All', 'Items/Open', 'Items/Close', 'Search/Leave')
 
@@ -93,7 +93,8 @@
 
     # Column 0 of Home: Prev chat and Next chat move an outline over the chats, Select chat opens the outlined
     # chat and closes the chat panel, Chats opens or closes the chat panel, Muse panel opens or closes Muse's
-    # avatar panel. Read options and Option 1-3 press the clickable items in Muse's newest message.
+    # avatar panel. Read options (in the headphones) and Option 1-3 read and press the clickable items in Muse's
+    # newest message, or the buttons of an approval card.
     Cells = @(
         # Back: opens the user's startup grid set at its start (Fast Talker here: set gridsetname to yours). Back
         # is at 0,0 on every Muse grid. Jump.Back cannot cross grid sets, and Change grid set takes no grid, so it
@@ -118,7 +119,8 @@
         @{ Grid = 'More Tools'; X = 9; Y = 2; Caption = 'Emojis'; Image = '[GRID3X]heart.wmf'
            Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Focus_Message_Input' }, @{ ID = 'Jump.To'; grid = 'Muse - Emoji' }) }
         @{ Grid = 'Home'; X = 9; Y = 2; Caption = 'Read options'; Style = 'style 2'
-           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Read' }) }
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Read_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Option 1'; Style = 'style 2'
            Commands = @(@{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Option_1' }) }
         @{ Grid = 'Home'; X = 9; Y = 4; Caption = 'Option 2'; Style = 'style 2'
