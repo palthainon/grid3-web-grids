@@ -53,7 +53,11 @@
   const chat = { index: -1, name: '' };
   const CHAT_MARK = 'grid3-chat';
   const trigger = () => all('[data-testid="hatch-chat-switcher-trigger"]')[0];
-  const chatRows = () => all('[data-testid="hatch-thread-row"]');
+  // The rows, with the "New side chat" button (hatch-chat-compose) in its place before the side chats, so
+  // Prev and Next chat can outline it and Select chat can press it.
+  const chatRows = () => all('[data-testid="hatch-thread-row"], [data-testid="hatch-chat-compose"]');
+  // A new side chat (/thread/new) has no Chats button, only "Back to main chat" (seen 2026-11-12).
+  const backToMain = () => all('button[aria-label="Back to main chat"]')[0];
   // First line only: the WhatsApp row reads "WhatsApp" then "Channel conversation, view only".
   const rowName = (row) => clean((row.innerText || label(row)).split('\n')[0]);
   const later = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -65,6 +69,7 @@
   // Opens the panel if needed. Returns the rows, or [] if they never appear.
   async function openChats() {
     if (chatRows().length) return chatRows();
+    if (!trigger() && backToMain()) { backToMain().click(); await waitFor(() => trigger()); }
     if (!trigger()) return [];
     trigger().click();
     return (await waitFor(() => chatRows().length && chatRows())) || [];
@@ -234,6 +239,47 @@
     (await waitFor(() => all('[role="menuitem"]').find((m) => /^Settings/.test(m.innerText.trim()))))?.click();
   }
 
+  // Approvals: Muse asks before some actions, such as sending an email, with a card
+  // [data-testid="hatch-inline-approval-card"] (role group, aria-label "Muse needs approval"). Chat stays paused
+  // until it is answered. The card's labels come from Muse and can grant standing permission ("Always allow",
+  // "Allow for this task", "Allow all ..."), so only the one-time "Allow once" or a plain "Allow" is ever
+  // pressed, from the primary button or the "More allow options" menu. Read from Muse's code 2026-11-12.
+  const ONCE = ['allow once', 'allow'];
+  const approvalCard = () => all('[data-testid="hatch-inline-approval-card"]').pop();
+  const textOf = (el) => clean(el.innerText || label(el));
+  const findOnce = (els) => { for (const want of ONCE) { const b = els.find((e) => textOf(e).toLowerCase() === want); if (b) return b; } return null; };
+
+  function allowOnce(card) {
+    const now = findOnce(all('button', card));
+    if (now) { now.click(); return 'Allowed once'; }
+    const more = all('button[aria-label="More allow options"]', card)[0];
+    if (!more) return 'No allow once choice. Ask for help.';
+    more.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    more.click();
+    waitFor(() => findOnce(all('[role="menuitem"]'))).then((item) => {
+      if (item) { item.click(); window.grid3Alert?.banner('Allowed once'); return; }
+      escape(document.activeElement || document.body);
+      window.grid3Alert?.banner('No allow once choice. Ask for help.');
+    });
+    return 'Allow once';
+  }
+
+  // The request (an email's recipient, subject and text), without the card's button labels.
+  function requestText(card) {
+    const parts = [];
+    const walk = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+    for (let n; (n = walk.nextNode());) if (!n.parentElement.closest('button, [role="button"]') && clean(n.textContent)) parts.push(clean(n.textContent));
+    return parts.join(' ').slice(0, 1500) || 'No request text';
+  }
+
+  function deny(card) {
+    const buttons = all('button', card);
+    const b = buttons.find((e) => /^deny$/i.test(textOf(e))) || buttons.find((e) => /^deny/i.test(textOf(e)));
+    if (!b) return 'No deny choice. Ask for help.';
+    b.click();
+    return 'Denied';
+  }
+
   // Options: clickable items in the newest Muse message (or just after it), other than the message toolbar.
   const TOOLBAR = new Set(['Reply', 'Copy response', 'React', 'More options']);
   function options() {
@@ -250,6 +296,8 @@
     return [];
   }
   function chooseOption(n) {
+    const card = approvalCard();
+    if (card) return n === 1 ? allowOnce(card) : n === 2 ? deny(card) : requestText(card);
     const option = options()[n - 1];
     if (!option) return `No option ${n}`;
     const text = clean(option.innerText || label(option));
@@ -272,7 +320,10 @@
     'Home/Read_Selected_Chat_Name': () => chat.name,
     'Chats/Toggle': () => { toggleChats(); },
     'Chats/Select': () => selectChat(),
-    'Options/Read': () => { const list = options().map((o, i) => `${i + 1}, ${clean(o.innerText || label(o))}.`); return list.length ? list.join(' ') : 'No options'; },
+    'Options/Read': () => {
+      const card = approvalCard();
+      if (card) return `${card.getAttribute('aria-label') || 'Muse needs approval'}. 1, Allow once. 2, Deny. 3, Read the request.`;
+      const list = options().map((o, i) => `${i + 1}, ${clean(o.innerText || label(o))}.`); return list.length ? list.join(' ') : 'No options'; },
     'Options/Option_1': () => chooseOption(1),
     'Options/Option_2': () => chooseOption(2),
     'Options/Option_3': () => chooseOption(3),
@@ -314,6 +365,18 @@
       return reacts[reacts.length - 1] || null;
     },
   });
+
+  // Approval alert: the same chime and a banner when an approval card appears, also one waiting at page load.
+  // Not grid3Alert.watch: that one ignores a new card after the last card is gone. One timer per page (page.js
+  // runs again with every cell).
+  if (window.grid3Alert && !window.__grid3ApprovalWatch) {
+    let last = null;
+    window.__grid3ApprovalWatch = setInterval(() => {
+      const card = approvalCard() || null;
+      if (card && card !== last) { window.__grid3_alerts = (window.__grid3_alerts || 0) + 1; window.grid3Alert.chime(); window.grid3Alert.banner('Muse needs your approval'); }
+      last = card;
+    }, 1500);
+  }
 
   // "Get the Muse app" (the "Work with Muse anywhere" prompt) is hidden, so link scanning skips it.
   const css = `button[aria-label="Get the Muse app"]{display:none!important}

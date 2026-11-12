@@ -92,8 +92,43 @@ try {
     await grid3(page, 'Muse/Chats/Toggle');
     await page.waitForTimeout(300);
     check('Chats/Toggle closes it again', (await rowCount()) === 0);
+    // New side chat: Prev and Next chat reach the "New side chat" button; Select chat presses it. In the new
+    // chat there is no Chats button, so Chats goes back to Main chat first and then opens the panel.
+    await grid3(page, 'Muse/Chats/Toggle');
+    await page.waitForTimeout(600);
+    await grid3(page, 'Muse/Home/Previous_Chat');
+    await grid3(page, 'Muse/Home/Previous_Chat');
+    check('Previous_Chat past Main chat wraps to New side chat', (await grid3(page, 'Muse/Home/Read_Selected_Chat_Name')) === 'New side chat');
+    check('Chats/Select presses New side chat and says it', (await grid3(page, 'Muse/Chats/Select')) === 'New side chat' && (await page.evaluate(() => window.opened.at(-1))) === 'New side chat');
+    await page.waitForTimeout(600);
+    check('the new side chat has no Chats button', !(await page.locator('#trigger').isVisible()) && await page.locator('#backMain').isVisible());
+    await grid3(page, 'Muse/Chats/Toggle');
+    await page.waitForTimeout(800);
+    check('Chats/Toggle in a new side chat goes back to Main chat and opens the panel', (await rowCount()) === 3 && await page.locator('[data-testid="hatch-thread-row"][aria-current="page"]').textContent() === 'Main chat');
+    await grid3(page, 'Muse/Chats/Toggle');
+    await page.waitForTimeout(300);
     check('Options/Read lists the newest message options', (await grid3(page, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     check('Option_2 presses the second option and says it', (await grid3(page, 'Muse/Options/Option_2')) === 'Give me a summary' && JSON.stringify(await page.evaluate(() => window.chosen)) === '["Give me a summary"]');
+    // Approvals: while a card waits, the option cells answer it. Only a one-time allow is ever pressed.
+    const decisions = () => page.evaluate(() => window.decisions.splice(0));
+    await page.evaluate(() => window.addApproval({ primary: 'Always allow', more: ['Allow for this task', 'Allow once'], deny: ['Deny', 'Deny for this task'] }));
+    check('Options/Read with an approval says the request and the choices', (await grid3(page, 'Muse/Options/Read')) === 'Muse needs approval. 1, Allow once. 2, Deny. 3, Read the request.');
+    const request = await grid3(page, 'Muse/Options/Option_3');
+    check('Option_3 reads the request without button labels', request === 'Send email to Pat. Subject: Lunch. See you at noon.', request);
+    check('Option_1 skips Always allow and picks Allow once from the menu', (await grid3(page, 'Muse/Options/Option_1')) === 'Allow once' && await page.waitForTimeout(600).then(decisions) .then((d) => JSON.stringify(d) === '["Allow once"]'));
+    await page.evaluate(() => window.addApproval({ primary: 'Allow', more: ['Always allow'] }));
+    check('Option_1 presses a plain Allow button', (await grid3(page, 'Muse/Options/Option_1')) === 'Allowed once' && JSON.stringify(await decisions()) === '["Allow"]');
+    await page.evaluate(() => window.addApproval({ primary: 'Always allow', more: ['Allow for this task'] }));
+    await grid3(page, 'Muse/Options/Option_1');
+    await page.waitForTimeout(3500);
+    check('Option_1 presses nothing when Muse offers no one-time allow', JSON.stringify(await decisions()) === '[]' && (await page.locator('#grid3-banner').textContent()) === 'No allow once choice. Ask for help.');
+    check('Option_2 presses Deny', (await grid3(page, 'Muse/Options/Option_2')) === 'Denied' && JSON.stringify(await decisions()) === '["Deny"]');
+    await page.evaluate(() => window.addApproval({ primary: 'Allow' }));
+    await page.waitForTimeout(2000);
+    check('a new approval card chimes and shows the banner', (await page.locator('#grid3-banner').textContent()) === 'Muse needs your approval');
+    await grid3(page, 'Muse/Options/Option_2');
+    await decisions();
+    check('with no approval, the options are the message options again', (await grid3(page, 'Muse/Options/Read')).startsWith('1, Tell me more.'));
     await grid3(page, 'Muse/Panel/Toggle');
     check('Panel/Toggle opens the avatar panel', await page.locator('#panel').count() === 1);
     await grid3(page, 'Muse/Chats/Toggle');

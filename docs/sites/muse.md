@@ -17,6 +17,8 @@ What `sites/muse/page.js` relies on. Seen on the signed-in page on 2026-11-06 in
 | Rail Chat icon | `a[data-testid="hatch-nav-chat"]` (`aria-expanded`) | A script click did not close the docked panel |
 | Chat rows | `[data-testid="hatch-thread-row"]`, `role="button"` | 9 rows: Main chat, WhatsApp, then side chats. The current row has `aria-current="page"` |
 | Chat row name | first line of the row's text | The WhatsApp row reads "WhatsApp" then "Channel conversation, view only" |
+| New side chat | `button[data-testid="hatch-chat-compose"]` (`aria-label="New side chat"`), after the channel rows and before the side chats | Not a `hatch-thread-row`. A click opens `/thread/new`, closes the panel and focuses the message box. Nothing is made until a message is sent. That page has **no Chats button**, only `button[aria-label="Back to main chat"]`. Seen 2026-11-12, Chrome |
+| Approval card | `[data-testid="hatch-inline-approval-card"]`, `role="group"`, `aria-label` such as "Muse needs approval" | Muse asks before some actions, such as sending an email. Chat stays paused until it is answered. Allow: the primary button (`data-hatch-approval-primary-action="true"`) plus a `More allow options` button whose menu holds `[role="menuitem"]` items. Deny: plain buttons ("Deny", "Deny for this task"). Labels come from Muse: "Allow", "Allow once", "Always allow", "Allow for this task", "Allow for this space", "Allow all ... actions". With several approvals the primary button is "Allow always" and "Allow once" is in the menu. Read from Muse's page code 2026-11-12 (no card was waiting, so not seen drawn) |
 | Avatar panel | open: `[role="button"][aria-label="Muse"]`, close: `[data-testid="hatch-status-panel-close"]` (`aria-label="Close panel"`) | |
 | "Work with Muse anywhere" | `button[aria-label="Get the Muse app"]` | page.js hides it |
 
@@ -106,6 +108,19 @@ First check:
 - Not pressed: Option 1, 2 and 3, Send. Each sends a message for the user, which agents must not do.
 - Known gap: after a page load the first Next or Prev chat press says nothing, because the chat names are
   unknown until the panel has opened once. Later presses name the chat at once.
+
+## Approvals and New side chat (2026-11-12)
+
+- While an approval card waits, Read options says the card's label, then "1, Allow once. 2, Deny. 3, Read the
+  request." Option 1 presses only a button or menu item that reads exactly "Allow once" or "Allow". It never
+  presses "Always allow" or any "Allow for ..." or "Allow all ..." choice, so Muse gets no standing permission. If
+  no one-time choice exists, it presses nothing and the banner says "No allow once choice. Ask for help."
+  Option 2 presses "Deny". Option 3 reads the request text without the button labels.
+- A new approval card plays the chime and shows "Muse needs your approval".
+- Prev and Next chat outline "New side chat" in its place among the rows. Select chat opens it, and Type then
+  writes in it. In the new chat, Chats presses "Back to main chat" and then opens the panel.
+- Checked: New side chat, Select chat and Chats on the signed-in page in Chrome 2026-11-12. The approval cells
+  passed against the mock only. They are untested on a real approval card, and untested in Grid 3.
 
 ## How to check page.js against the real page
 
