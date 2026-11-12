@@ -127,6 +127,12 @@ First check:
 - Checked: New side chat, Select chat and Chats on the signed-in page in Chrome 2026-11-12. The approval cells
   passed against the mock only. They are untested on a real approval card, and untested in Grid 3.
 
+## Read options in the headphones (2026-11-12)
+
+Home's Read options cell runs `Muse/Options/Read_Headphones`, a 1 s wait and `WebBrowser.NextElement`, the same
+route as Read in headphones (operator asked for it). The text is the same as `Options/Read`: the message options, or
+an approval request and its buttons. Option 1 to 3 still say their result aloud. Not yet heard in Grid 3.
+
 ## Prev and Next msg preview (2026-11-12)
 
 Muse draws no time on a message. It puts a time marker in the log before each group of messages: "8:42 AM" for
