@@ -29,7 +29,7 @@
     # WhatsApp housekeeping calls with no Muse equivalent. They are removed; the rest of the cell stays.
     Ignore = @('Home/Show_Chat_List', 'Home/Cancel_Reply_To_Message')
     # Muse functions outside the messaging contract.
-    Extra  = @('Home/Read_Selected_Message_Headphones', 'Home/Preview_Selected_Message_Headphones', 'Options/Read_Headphones', 'Options/Up_Headphones', 'Options/Down_Headphones', 'Home/Select', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
+    Extra  = @('Home/Read_Selected_Message_Headphones', 'Home/Preview_Selected_Message_Headphones', 'Options/Read_Headphones', 'Options/Up_Headphones', 'Options/Down_Headphones', 'Home/Select', 'Home/Select_Headphones', 'Home/Read_Selected_Chat_Name_Headphones', 'Items/Read_Headphones', 'Items/Read_All_Headphones', 'Items/Open_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
                'Places/Chat', 'Places/Search', 'Places/Feed', 'Places/Ideas', 'Places/Goals', 'Places/Library', 'Places/Settings',
                'Items/Previous', 'Items/Next', 'Items/Read', 'Items/Read_All', 'Items/Open', 'Items/Close', 'Search/Leave')
 
@@ -62,6 +62,11 @@
                                                 @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'Home'; X = 8; Y = 2; Append = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Preview_Selected_Message_Headphones' },
                                                 @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
+        # Only Speak and Read msg talk aloud (operator, 2026-11-12): Prev and Next chat say the chat in the headphones.
+        @{ Grid = 'Home'; X = 0; Y = 1; Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Previous_Chat' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Read_Selected_Chat_Name_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
+        @{ Grid = 'Home'; X = 0; Y = 2; Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Next_Chat' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Read_Selected_Chat_Name_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         # Keys with only an image or a blank: words for auditory scanning, as Smartbox's own keyboards have.
         @{ Grid = 'Keyboard'; X = 4; Y = 5; Audio = 'space' }
         @{ Grid = 'Keyboard - Punctuation'; X = 4; Y = 5; Audio = 'space' }
@@ -102,7 +107,8 @@
         @{ Grid = 'Home'; X = 0; Y = 0; Caption = 'Back'; Image = '[GRID3X]jump_back.wmf'; Style = 'style 2'
            Commands = @(@{ ID = 'Settings.ChangeGridSet'; gridsetname = 'Fast Talker' }) }
         @{ Grid = 'Home'; X = 0; Y = 3; Caption = 'Select'; Style = 'style 2'
-           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Home/Select' }) }
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Select_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'Home'; X = 0; Y = 4; Caption = 'Chats'; Style = 'style 2'
            Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Chats/Toggle' }) }
         @{ Grid = 'Home'; X = 0; Y = 5; Caption = 'Muse panel'; Style = 'style 2'
@@ -121,24 +127,26 @@
         @{ Grid = 'Home'; X = 9; Y = 2; Caption = 'Read options'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Read_Headphones' },
                         @{ ID = 'CommandExecution.Wait'; waittime = '00:00:02.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
-        @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Up'; Style = 'style 2'
+        @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Previous option'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Up_Headphones' },
                         @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
-        @{ Grid = 'Home'; X = 9; Y = 4; Caption = 'Down'; Style = 'style 2'
+        @{ Grid = 'Home'; X = 9; Y = 4; Caption = 'Next option'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Down_Headphones' },
                         @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
-        @{ Grid = 'Home'; X = 8; Y = 5; Caption = 'Select'; Style = 'style 2'
-           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Home/Select' }) }
         # More Tools: Muse's rail pages (right) and the items on them (left). Prev and Next item outline an item and say its first line,
         # Read item says all of it, Open item presses it, Close shuts search or settings. Search jumps to the keyboard to type.
         @{ Grid = 'More Tools'; X = 0; Y = 1; Caption = 'Prev item'; Style = 'style 2'
-           Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Previous' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Items/Read' }) }
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Previous' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Read_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'More Tools'; X = 0; Y = 2; Caption = 'Next item'; Style = 'style 2'
-           Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Next' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Items/Read' }) }
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Next' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Read_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'More Tools'; X = 0; Y = 3; Caption = 'Read item'; Style = 'style 2'
-           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Items/Read_All' }) }
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Read_All_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'More Tools'; X = 0; Y = 4; Caption = 'Open item'; Style = 'style 2'
-           Commands = @(@{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Items/Open' }) }
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Open_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         @{ Grid = 'More Tools'; X = 0; Y = 5; Caption = 'Close'; Style = 'style 2'
            Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Items/Close' }) }
         @{ Grid = 'More Tools'; X = 8; Y = 1; Caption = 'Search'; Style = 'style 2'
