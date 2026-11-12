@@ -1,4 +1,4 @@
-# Builds grids\Headphone Test.gridset. Each cell's caption names the device it should play on:
+# Builds grids\Headphone Test.gridset (pages and positions: docs/headphone-test.md). Each cell's caption names the device it should play on:
 # the audio feedback voice (headphones) or the speaking voice (main speaker). Import it, press each cell, listen.
 # Cell 3 runs templates\headphone.js on example.com, the route a site grid set can use for long text. Cell 5 is
 # Grid 3's own link cursor, which should speak each link in the headphones.

@@ -41,7 +41,8 @@ Background: `docs/templates.md` (how the builder works), `docs/grid3-internals.m
   machine with `grid3-click` installed, press cells with the `grid3-press` skill, but never web-page buttons.
   Never restart Grid 3 (only a person can press Open on the Users screen).
 - When a cell does nothing, read `C:\Users\Public\Documents\Sensory Software\Diagnostic Logs\Grid 3.log`.
-- `tools/import-gridset.ps1 -GridSet grids\<Output> -NoBuild` adds a new copy each time ("Muse (2)").
+- `tools/import-gridset.ps1 -GridSet grids\<Output> -NoBuild` adds a new copy ("Muse (2)") when a set of that name
+  exists, and takes the plain name when none does (seen 2026-11-12). Check the window title for the open set.
 - Sites keep UI state between visits (Muse's "Keep chat panel visible"). Check both states of any such
   setting on the live page, and put it back as you found it.
 - Keep a never-press list per site in `docs/sites/<site>.md` (Muse: Log out, goal Mark checkboxes, Send,
