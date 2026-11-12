@@ -84,7 +84,10 @@
   const log = document.getElementById('log');
   for (let i = 1; i <= 12; i++) {
     const outer = document.createElement('div'); outer.className = 'msg';
+    // Time markers sit between groups in the log, as on the real page; Muse's replies carry the assistant marker.
+    if (i === 1 || i === 9) { const t = document.createElement('div'); t.innerHTML = `<span>${i === 1 ? 'Nov 11, 7:41 PM' : '8:11 AM'}</span>`; log.appendChild(t); }
     const bubble = document.createElement('div'); bubble.textContent = (i % 2 ? 'You: question ' : 'Muse: answer ') + i;
+    if (i % 2 === 0) bubble.setAttribute('data-hatch-assistant-message-body', '');
     const reply = document.createElement('button'); reply.setAttribute('aria-label', 'Reply');
     reply.onclick = () => window.replied.push(i);
     // As on the real page: Muse's replies have React, the user's own messages have Copy response.
