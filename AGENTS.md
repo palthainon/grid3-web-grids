@@ -43,6 +43,6 @@ disabilities communicate, so be careful and test before you hand anything over.
   the script loads, or a fresh install does nothing.
 - Computer use cannot press Grid 3 cells: Grid 3 has `uiAccess`, so Windows blocks the input. Hover outlines
   are not presses. On a test machine, a person can run `tools/install-grid3-click.ps1` once as administrator.
-  Then move the pointer onto a cell (computer use `mouse_move` works) and run `tools/grid3-click.ps1` to press it. Test page scripts on the live site in a signed-in browser tab instead.
+  Then run `tools/grid3-click.ps1 -X <x> -Y <y>` (physical pixels) to press the cell at that point. Test page scripts on the live site in a signed-in browser tab instead.
 - Websites cannot raise notifications in Grid 3. Use `templates/alert.js` while the site is open.
 - Sites keep UI state between visits (Muse's "Keep chat panel visible"). Model each state in the mock page.
