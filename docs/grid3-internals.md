@@ -50,6 +50,8 @@ Read from `SensorySoftware.Grids.Storage.dll` by reflection (method below), so t
 | `ComputerControl.MoveMouseBy` | `x`, `y` | |
 | `ComputerControl.MouseClick` | `button` (Left; Right) | Clicks where the pointer is |
 | `ComputerControl.MouseWheelDown` / `Up` | `indicatorenabled`, `commandtype` (SingleClick; RepeatedClicks, Continuous), `repeatcount`, `repeatgap`, `holdduration` | Scrolls whatever is under the pointer |
+| `ComputerControl.DeviceVolume` / `DeviceMute` | `option` (Increase; Decrease), steps of 10 | Change only the Windows default playback device (multimedia role), not the device an app or a Grid 3 voice plays on (read in 3.0.104 code, 2026-11-12). For a named device, run `tools/device-volume.cs` (see below) |
+| `ComputerControl.Run` | `FileName`, `Arguments`, `AllowSwitchTo` (0; 1), `RunCommandType` (Program) | Shell-executes the file. `FileName` takes only Grid 3's own placeholders: `%APPDATA%`, `%PROGRAMFILES%`, `%PROFILE%`, `%TEMP%`, `%MYDOCUMENTS%` and a few more. `%LOCALAPPDATA%` is not one (3.0.104 code, 2026-11-12) |
 | `Speech.SpeakNow` | `text`, `useauditoryvoice` (False), `wait` | Speaks fixed text. `useauditoryvoice` 1 uses the audio feedback voice ("Use audio feedback voice" in the editor) |
 | `Speech.ReadCell` | `useauditoryvoice` (False), `wait` | Speaks the pressed cell's own caption |
 | `Speech.SpeakClipboard` | none | Speaks the clipboard with the speaking voice. It has no audio feedback option |

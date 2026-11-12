@@ -6,7 +6,14 @@
 # and moves the speaking voice to it; the cell's own commands (a test sentence, Email.Speak, Sms.Speak) run as well.
 # A stored internal.changeaudiodeviceautocontentcell command does not work: Grid 3 casts its text parameter to a
 # device object (3.0.104, read 2026-11-09). The speaking voice stays on the last device pressed.
-# Usage: pwsh -File tools\build-headphone-test.ps1
+# Volume page: cells that change the volume of one named device through tools\device-volume.exe (install it with
+# tools\install-device-volume.ps1). Grid 3's own device volume cells change only the Windows default device.
+# Usage: pwsh -File tools\build-headphone-test.ps1 [-SpeakerName 'USB AUDIO CODEC'] [-HeadphoneName 'AB13X']
+param(
+    # Part of each device's Windows name, as device-volume.exe logs it. Defaults: a USB speaker and a USB headset.
+    [string]$SpeakerName = 'USB AUDIO CODEC',
+    [string]$HeadphoneName = 'AB13X'
+)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $root = Split-Path $PSScriptRoot -Parent
@@ -35,6 +42,12 @@ function DeviceCell($x, $y, $commands) {
     "<Cell X=`"$x`" Y=`"$y`"><Content><Commands>$($commands -join '')</Commands><ContentType>AutoContent</ContentType>" +
     "<ContentSubType>Speech.ChangeAudioDeviceAutoContent</ContentSubType><Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>"
 }
+# Runs device-volume.exe with no window. Grid 3 expands %APPDATA% in FileName (not %LOCALAPPDATA%: it has its own fixed list).
+function VolumeCell($x, $y, $caption, $device, $change) {
+    $arguments = '"' + $device + '" ' + $change
+    Cell $x $y $caption @("<Command ID=`"ComputerControl.Run`">$(Param 'FileName' '%APPDATA%\grid3-web-grids\device-volume.exe')" +
+        "$(Param 'Arguments' $arguments)$(Param 'AllowSwitchTo' 0)$(Param 'RunCommandType' 'Program')</Command>")
+}
 function WebCell($x, $y, $caption, $url) {
     Cell $x $y $caption @("<Command ID=`"Jump.To`">$(Param 'grid' $webGrid)</Command>", "<Command ID=`"WebBrowser.NavigateUrl`">$(Param 'url' $url)</Command>")
 }
@@ -55,6 +68,7 @@ function Grid($gridName, $columns, $rows, $cells) {
 $homeGrid = "$name - Home"
 $deviceGrid = "$name - Devices"
 $copyGrid = "$name - Cells to copy"
+$volumeGrid = "$name - Volume"
 $webGrid = "$name - Web"
 $emailGrid = "$name - Email"
 $textGrid = "$name - Texts"
@@ -62,7 +76,7 @@ $headphone = Get-Content (Join-Path $root 'templates\headphone.js') -Raw
 $web3 = 'Test three. If you hear this in your headphones, a web page can read long text to you privately.'
 $web4 = 'Test four. This web text should come from the main speaker.'
 $grids = [ordered]@{
-    $homeGrid = Grid $homeGrid 4 3 @(
+    $homeGrid = Grid $homeGrid 5 3 @(
         Cell 0 0 '1 Headphones' @(SpeakNow 'Test one. You should hear this in your headphones only.' 1)
         Cell 1 0 '2 Speaker' @(SpeakNow 'Test two. This should come from the main speaker.' 0)
         # Stock Start cells jump, then navigate, then wait for the page (see docs/grid3-internals.md).
@@ -71,6 +85,7 @@ $grids = [ordered]@{
             "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' '00:00:04.0000000')$(Param 'cancellable' 1)</Command>")
         Cell 0 2 'Stop speaking' @('<Command ID="Speech.Stop" />')
         Cell 1 2 'Device test' @("<Command ID=`"Jump.To`">$(Param 'grid' $deviceGrid)</Command>")
+        Cell 4 0 'Volume cells' @("<Command ID=`"Jump.To`">$(Param 'grid' $volumeGrid)</Command>")
         Cell 3 1 'Cells to copy' @("<Command ID=`"Jump.To`">$(Param 'grid' $copyGrid)</Command>")
         Cell 2 2 'Email test' @("<Command ID=`"Jump.To`">$(Param 'grid' $emailGrid)</Command>")
         Cell 3 2 'Text message test' @("<Command ID=`"Jump.To`">$(Param 'grid' $textGrid)</Command>")
@@ -87,6 +102,18 @@ $grids = [ordered]@{
         DeviceCell 1 0 @()
         Cell 2 0 'Copy both device cells (Edit mode)' @()
         Cell 0 2 'Speaker check' @(SpeakNow 'This plays on the device picked last.' 0)
+        Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
+        Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+    )
+    # Copy these into a media grid's volume page in Edit mode, in place of its Device volume cells.
+    $volumeGrid = Grid $volumeGrid 4 3 @(
+        VolumeCell 0 0 'Speaker louder' $SpeakerName '+10'
+        VolumeCell 1 0 'Speaker quieter' $SpeakerName '-10'
+        VolumeCell 0 1 'Headphones louder' $HeadphoneName '+10'
+        VolumeCell 1 1 'Headphones quieter' $HeadphoneName '-10'
+        Cell 2 0 'Speaker check' @(SpeakNow 'This plays on the device picked for speech.' 0)
+        Cell 2 1 'Headphones check' @(SpeakNow 'This is the audio feedback voice.' 1)
+        Cell 3 0 'Copy the volume cells (Edit mode)' @()
         Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
         Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
