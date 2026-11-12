@@ -175,15 +175,21 @@ whole sets from the stock WhatsApp and YouTube sets instead; see [templates.md](
 ### What an agent can and cannot do with Grid 3 (2026-11-06)
 
 - **Computer use cannot press Grid 3 cells.** `Grid 3.exe` has `uiAccess="true"` in its manifest. Windows
-  blocks input from normal programs into it: clicks, keys and UI Automation all failed. Grid 3 still draws
-  its hover outline under the pointer, which looks like a press but is not. Screenshots work.
+  blocks input from normal programs into it: clicks, keys, `SendInput` and UI Automation all failed (UI
+  Automation sees 0 elements). Grid 3 still draws its hover outline under the pointer, which looks like a press
+  but is not. Screenshots work.
+- **On a test machine an agent can press cells** with `tools/grid3-click.ps1` after a person installs it once
+  as administrator. An elevated process's input reaches Grid 3 (seen 2026-11-12). Steps and traps are in the
+  `grid3-press` skill (`.claude/skills/grid3-press/SKILL.md`).
+- **Grid 3's own log** is `C:\Users\Public\Documents\Sensory Software\Diagnostic Logs\Grid 3.log`. Read it first
+  when a cell does nothing. It logs each Run command (`Launching`, `started`, `Error launching`).
 - So an agent cannot open a user on Grid 3's Users screen. Do not restart Grid 3: it stops there until a
   person presses Open.
 - `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` set in the launching shell did not reach Grid 3's browser. Windows
   starts uiAccess programs through a service, which uses the saved user environment.
 - Grid 3 3.0.93 has a hidden `BrowserDevTools` setting (`appSettings` in its `.config` file, read from
   `WebView2Wrapper.AreDevToolsEnabled`). Untested: it needs a file change under Program Files and a restart.
-- What works: test page scripts on the live site in a signed-in Claude in Chrome tab, then let a person press
-  the cells in Grid 3. Site facts and the check steps are in `docs/sites/<site>.md`.
+- What works: test page scripts on the live site in a signed-in Claude in Chrome tab. Then press the cells in
+  Grid 3 with `grid3-click` on a test machine, or let a person press them. Site facts and the check steps are in `docs/sites/<site>.md`.
 - Each Grid 3 user has its own browser profile (`%APPDATA%\Smartbox\Grid 3\WebView2Cache\<user>`). A site
   signed in under one user is not signed in under another.
