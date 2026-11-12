@@ -29,7 +29,7 @@
     # WhatsApp housekeeping calls with no Muse equivalent. They are removed; the rest of the cell stays.
     Ignore = @('Home/Show_Chat_List', 'Home/Cancel_Reply_To_Message')
     # Muse functions outside the messaging contract.
-    Extra  = @('Home/Read_Selected_Message_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
+    Extra  = @('Home/Read_Selected_Message_Headphones', 'Home/Preview_Selected_Message_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
                'Places/Chat', 'Places/Search', 'Places/Feed', 'Places/Ideas', 'Places/Goals', 'Places/Library', 'Places/Settings',
                'Items/Previous', 'Items/Next', 'Items/Read', 'Items/Read_All', 'Items/Open', 'Items/Close', 'Search/Leave')
 
@@ -56,6 +56,12 @@
         @{ Grid = 'More Tools'; X = 0; Y = 0; MoveTo = @(9, 5) }
         # Read msg (aloud) moves to 9,3 so Read in headphones takes 8,0 and is scanned first (operator, 2026-11-09).
         @{ Grid = 'Home'; X = 8; Y = 0; MoveTo = @(9, 3) }
+        # Prev and Next msg then say who sent the message, its time and its first words in the headphones
+        # (operator, 2026-11-12). Same route as Read in headphones: the hidden click, a 1 s wait, NextElement.
+        @{ Grid = 'Home'; X = 8; Y = 1; Append = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Preview_Selected_Message_Headphones' },
+                                                @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
+        @{ Grid = 'Home'; X = 8; Y = 2; Append = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Preview_Selected_Message_Headphones' },
+                                                @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
         # Keys with only an image or a blank: words for auditory scanning, as Smartbox's own keyboards have.
         @{ Grid = 'Keyboard'; X = 4; Y = 5; Audio = 'space' }
         @{ Grid = 'Keyboard - Punctuation'; X = 4; Y = 5; Audio = 'space' }

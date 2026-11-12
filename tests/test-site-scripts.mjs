@@ -65,6 +65,16 @@ try {
     await grid3(page, 'Muse/Home/Previous_Message');
     check('Previous_Message moves up one', (await grid3(page, 'Muse/Home/Read_Selected_Message')) === 'You: question 11');
     await grid3(page, 'Muse/Home/Next_Message');
+    const heard = () => page.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b.length ? b[b.length - 1]._grid_getHotSpotAuditoryFeedbackText() : ''; });
+    await grid3(page, 'Muse/Home/Previous_Message');
+    await grid3(page, 'Muse/Home/Preview_Selected_Message_Headphones');
+    check('Prev msg preview says sender, time and the start', (await heard()) === 'You, 8:11 AM. question 11', await heard());
+    for (let i = 0; i < 10; i++) await grid3(page, 'Muse/Home/Previous_Message');
+    await grid3(page, 'Muse/Home/Preview_Selected_Message_Headphones');
+    check('Prev msg preview uses an older day marker', (await heard()) === 'You, Nov 11, 7:41 PM. question 1', await heard());
+    await grid3(page, 'Muse/Home/Jump_To_End_Of_Conversation');
+    await grid3(page, 'Muse/Home/Preview_Selected_Message_Headphones');
+    check('Next msg preview of a Muse reply', (await heard()).startsWith('Muse, 8:11 AM. answer 12'), await heard());
     check('Next_Message moves down one', (await grid3(page, 'Muse/Home/Read_Selected_Message')).startsWith('Muse: answer 12'));
     check('selected message is outlined', await page.evaluate(() => document.querySelectorAll('.grid3-selected').length === 1));
     await grid3(page, 'Muse/Home/Previous_Message');

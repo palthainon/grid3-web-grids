@@ -122,6 +122,18 @@ First check:
 - Checked: New side chat, Select chat and Chats on the signed-in page in Chrome 2026-11-12. The approval cells
   passed against the mock only. They are untested on a real approval card, and untested in Grid 3.
 
+## Prev and Next msg preview (2026-11-12)
+
+Muse draws no time on a message. It puts a time marker in the log before each group of messages: "8:42 AM" for
+today, "Nov 11, 7:41 PM" for older days (a `div` holding one `span`). Muse's replies have
+`[data-hatch-assistant-message-body]`; the user's messages do not. Read on the signed-in page in Chrome.
+
+After the move, Prev msg and Next msg run `Muse/Home/Preview_Selected_Message_Headphones`, then a 1 s wait and
+`WebBrowser.NextElement`, the same route as Read in headphones. Philip hears the sender, the time of the
+message's group, and the first 12 words: "Muse, 8:42 AM. Good morning, Philip. ...". The time is the marker
+before the message, so a message later in a group says the group's time. Checked on the real page in Chrome
+(the text only). Not yet heard in Grid 3.
+
 ## Every control, and how the grid reaches it (2026-11-12)
 
 Inventory read on the signed-in page in Chrome 2026-11-12. More's Prev, Next, Read and Open item walk whatever
