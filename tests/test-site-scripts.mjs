@@ -125,21 +125,22 @@ try {
     await page.waitForTimeout(300);
     check('Options/Read lists the newest message options', (await grid3(page, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     check('Option_2 presses the second option and says it', (await grid3(page, 'Muse/Options/Option_2')) === 'Give me a summary' && JSON.stringify(await page.evaluate(() => window.chosen)) === '["Give me a summary"]');
-    // Approvals: while a card waits, the option cells answer it. Only a one-time allow is ever pressed.
+    // Approvals: the short card first, Review opens the full card, then the option cells read and press its buttons.
     const decisions = () => page.evaluate(() => window.decisions.splice(0));
-    await page.evaluate(() => window.addApproval({ primary: 'Always allow', more: ['Allow for this task', 'Allow once'], deny: ['Deny', 'Deny for this task'] }));
-    check('Options/Read with an approval says the request and the choices', (await grid3(page, 'Muse/Options/Read')) === 'Muse needs approval. 1, Allow once. 2, Deny. 3, Read the request.');
-    const request = await grid3(page, 'Muse/Options/Option_3');
-    check('Option_3 reads the request without button labels', request === 'Send email to Pat. Subject: Lunch. See you at noon.', request);
-    check('Option_1 skips Always allow and picks Allow once from the menu', (await grid3(page, 'Muse/Options/Option_1')) === 'Allow once' && await page.waitForTimeout(600).then(decisions) .then((d) => JSON.stringify(d) === '["Allow once"]'));
-    await page.evaluate(() => window.addApproval({ primary: 'Allow', more: ['Always allow'] }));
-    check('Option_1 presses a plain Allow button', (await grid3(page, 'Muse/Options/Option_1')) === 'Allowed once' && JSON.stringify(await decisions()) === '["Allow"]');
-    await page.evaluate(() => window.addApproval({ primary: 'Always allow', more: ['Allow for this task'] }));
-    await grid3(page, 'Muse/Options/Option_1');
-    await page.waitForTimeout(3500);
-    check('Option_1 presses nothing when Muse offers no one-time allow', JSON.stringify(await decisions()) === '[]' && (await page.locator('#grid3-banner').textContent()) === 'No allow once choice. Ask for help.');
-    check('Option_2 presses Deny', (await grid3(page, 'Muse/Options/Option_2')) === 'Denied' && JSON.stringify(await decisions()) === '["Deny"]');
-    await page.evaluate(() => window.addApproval({ primary: 'Allow' }));
+    const email = { primary: 'Send', more: ['Always allow for this recipient'], deny: ["Don't send"], title: 'Send this email in Gmail' };
+    await page.evaluate((o) => window.addSummary(o), email);
+    check('Options/Read with the short card presses Review', (await grid3(page, 'Muse/Options/Read')) === 'A task needs review. Opening it. Press Read options again.' && await page.locator('[data-hatch-approval-primary-action]').count() === 1);
+    const said = await grid3(page, 'Muse/Options/Read');
+    check('Options/Read says the request and each button in order', said === "Send this email in Gmail. Send email to Pat. Subject: Lunch. See you at noon. 1, Send. 2, More choices. 3, Don't send.", said);
+    check('Option_2 on More choices opens the menu', (await grid3(page, 'Muse/Options/Option_2')) === 'More choices. Press Read options.');
+    await page.waitForTimeout(300);
+    const said2 = await grid3(page, 'Muse/Options/Read');
+    check('with the menu open, its entries take the place of More choices', said2.endsWith("1, Send. 2, Always allow for this recipient. 3, Don't send."), said2);
+    check('Option_3 presses Don\'t send', (await grid3(page, 'Muse/Options/Option_3')) === "Don't send" && JSON.stringify(await decisions()) === '["Don\'t send"]');
+    await page.evaluate(() => document.querySelectorAll('[role="menu"]').forEach((m) => m.remove()));
+    await page.evaluate((o) => window.addApproval(o), email);
+    check('Option_1 presses Send', (await grid3(page, 'Muse/Options/Option_1')) === 'Send' && JSON.stringify(await decisions()) === '["Send"]');
+    await page.evaluate((o) => window.addApproval(o), { primary: 'Send', deny: ["Don't send"] });
     await page.waitForTimeout(2000);
     check('a new approval card chimes and shows the banner', (await page.locator('#grid3-banner').textContent()) === 'Muse needs your approval');
     await grid3(page, 'Muse/Options/Option_2');
