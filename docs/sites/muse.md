@@ -64,7 +64,7 @@ editor, plus Fix (AI spelling correction) at column 7, row 2 and fast typing on 
 copy. Scan groups: the letters are one group, scanned key by key, as on the user's email keyboard. Row groups
 were tried on 2026-11-08 and reverted at the operator's request. Punctuation keeps one group per key row. Send presses Enter; Back closes an empty search and returns. Clear selects all
 and deletes. Tools: Select all, Copy, Paste, Left, Right, Previous and Next word, Start and End of text.
-Dropped from the old WhatsApp keyboard: Quick msg and Emojis (Emojis is still on Home). Untested in a web page:
+Dropped from the old WhatsApp keyboard: Quick msg and Emojis. Emojis left the set on 2026-11-12. Untested in a web page:
 Fix, Del word and the Tools commands (Grid 3 `Action.*` text commands; Del letter already worked).
 
 Switch scan groups on Home (2026-11-06): group 1 messages (Read in headphones, Prev msg, Reply, Next msg, Read options,
@@ -101,7 +101,8 @@ First check:
 - `Muse/Home/Read_Selected_Message_Headphones` gives the same text to `templates/headphone.js`, so Grid 3 reads it with
   the audio feedback voice (headphones). Its cell must run `CommandExecution.Wait` (1 s) and `WebBrowser.NextElement`
   after it. In the mock, the hidden click kept the selection and both panels. Home's "Read in headphones" cell (8,0, before Read msg at 9,3)
-  carries it. It replaced Emojis, which moved to More Tools in place of Zoom out (2026-11-06). Not tried on muse.ai.
+  carries it. Not tried on muse.ai. Emojis went to More Tools 9,2 on 2026-11-06 and left the set on 2026-11-12
+  (operator). The stock WhatsApp Zoom out (`WebBrowser.SetZoom`, Decrease) is back at 9,2, under Zoom in.
 - Read options said "1, Add both. 2, Add only the weekly schedule. 3, Leave the folder as it is."
 - Next chat opened the panel, picked the next chat, closed the panel, and Read chat named it. Prev chat went
   back. The page was left on Main chat.

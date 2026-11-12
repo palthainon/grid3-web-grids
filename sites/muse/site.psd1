@@ -117,13 +117,11 @@
         @{ Grid = 'Keyboard'; X = 7; Y = 2; Caption = 'Fix'; Style = 'Navigation category style'
            Commands = @(@{ ID = 'Prediction.CorrectionTool' }) }
         # Read msg into the headphones (templates\headphone.js): the click lands silently, then NextElement speaks it
-        # with the audio feedback voice. It replaced Emojis, which moved to More Tools in place of Zoom out (operator, 2026-11-06).
-        # At 8,0, before Read msg (operator, 2026-11-09).
+        # with the audio feedback voice. At 8,0, before Read msg (operator, 2026-11-09). Emojis left the set and
+        # the stock Zoom out is back at More Tools 9,2, under Zoom in (operator, 2026-11-12).
         @{ Grid = 'Home'; X = 8; Y = 0; Caption = 'Read in headphones'; Style = 'style 2'; Image = '[GRID3X]ear.wmf'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Read_Selected_Message_Headphones' },
                         @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
-        @{ Grid = 'More Tools'; X = 9; Y = 2; Caption = 'Emojis'; Image = '[GRID3X]heart.wmf'
-           Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Focus_Message_Input' }, @{ ID = 'Jump.To'; grid = 'Muse - Emoji' }) }
         @{ Grid = 'Home'; X = 9; Y = 2; Caption = 'Read options'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Read_Headphones' },
                         @{ ID = 'CommandExecution.Wait'; waittime = '00:00:02.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
