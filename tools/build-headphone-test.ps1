@@ -121,6 +121,10 @@ $grids = [ordered]@{
         Cell 3 0 'Copy the volume cells (Edit mode)' @()
         # Logs each device's volume, the Windows default and the apps on each device. Press it while media plays.
         VolumeCell 3 1 'Log volume status' '' 'status'
+        # Make the device the Windows default: books and videos (browser, Join-In) move to it. Grid 3 voices set to
+        # a named device stay put, and Grid 3's own Device volume cells follow the new default.
+        VolumeCell 0 2 'Media to speaker' $SpeakerName 'default'
+        VolumeCell 1 2 'Media to headphones' $HeadphoneName 'default'
         Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
         Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
