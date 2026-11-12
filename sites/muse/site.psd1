@@ -29,7 +29,7 @@
     # WhatsApp housekeeping calls with no Muse equivalent. They are removed; the rest of the cell stays.
     Ignore = @('Home/Show_Chat_List', 'Home/Cancel_Reply_To_Message')
     # Muse functions outside the messaging contract.
-    Extra  = @('Home/Read_Selected_Message_Headphones', 'Home/Preview_Selected_Message_Headphones', 'Options/Read_Headphones', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
+    Extra  = @('Home/Read_Selected_Message_Headphones', 'Home/Preview_Selected_Message_Headphones', 'Options/Read_Headphones', 'Options/Up_Headphones', 'Options/Down_Headphones', 'Home/Select', 'Panel/Toggle', 'Chats/Toggle', 'Chats/Select', 'Options/Read', 'Options/Option_1', 'Options/Option_2', 'Options/Option_3',
                'Places/Chat', 'Places/Search', 'Places/Feed', 'Places/Ideas', 'Places/Goals', 'Places/Library', 'Places/Settings',
                'Items/Previous', 'Items/Next', 'Items/Read', 'Items/Read_All', 'Items/Open', 'Items/Close', 'Search/Leave')
 
@@ -93,16 +93,16 @@
 
     # Column 0 of Home: Prev chat and Next chat move an outline over the chats, Select chat opens the outlined
     # chat and closes the chat panel, Chats opens or closes the chat panel, Muse panel opens or closes Muse's
-    # avatar panel. Read options (in the headphones) and Option 1-3 read and press the clickable items in Muse's
-    # newest message, or the buttons of an approval card.
+    # avatar panel. Read options, Up and Down (in the headphones) read and outline the clickable items in Muse's
+    # newest message, or the buttons of an approval card; Select (here and at 0,3) presses what was moved last.
     Cells = @(
         # Back: opens the user's startup grid set at its start (Fast Talker here: set gridsetname to yours). Back
         # is at 0,0 on every Muse grid. Jump.Back cannot cross grid sets, and Change grid set takes no grid, so it
         # cannot return to the startup set's menu that opened Muse. Grid explorer is on More.
         @{ Grid = 'Home'; X = 0; Y = 0; Caption = 'Back'; Image = '[GRID3X]jump_back.wmf'; Style = 'style 2'
            Commands = @(@{ ID = 'Settings.ChangeGridSet'; gridsetname = 'Fast Talker' }) }
-        @{ Grid = 'Home'; X = 0; Y = 3; Caption = 'Select chat'; Style = 'style 2'
-           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Chats/Select' }) }
+        @{ Grid = 'Home'; X = 0; Y = 3; Caption = 'Select'; Style = 'style 2'
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Home/Select' }) }
         @{ Grid = 'Home'; X = 0; Y = 4; Caption = 'Chats'; Style = 'style 2'
            Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Chats/Toggle' }) }
         @{ Grid = 'Home'; X = 0; Y = 5; Caption = 'Muse panel'; Style = 'style 2'
@@ -120,13 +120,15 @@
            Commands = @(@{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Home/Focus_Message_Input' }, @{ ID = 'Jump.To'; grid = 'Muse - Emoji' }) }
         @{ Grid = 'Home'; X = 9; Y = 2; Caption = 'Read options'; Style = 'style 2'
            Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Read_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:02.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
+        @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Up'; Style = 'style 2'
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Up_Headphones' },
                         @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
-        @{ Grid = 'Home'; X = 8; Y = 4; Caption = 'Option 1'; Style = 'style 2'
-           Commands = @(@{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Option_1' }) }
-        @{ Grid = 'Home'; X = 9; Y = 4; Caption = 'Option 2'; Style = 'style 2'
-           Commands = @(@{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Option_2' }) }
-        @{ Grid = 'Home'; X = 8; Y = 5; Caption = 'Option 3'; Style = 'style 2'
-           Commands = @(@{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Options/Option_3' }) }
+        @{ Grid = 'Home'; X = 9; Y = 4; Caption = 'Down'; Style = 'style 2'
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.ExecuteJavaScript'; commandid = 'Muse/Options/Down_Headphones' },
+                        @{ ID = 'CommandExecution.Wait'; waittime = '00:00:01.0000000'; cancellable = '1' }, @{ ID = 'WebBrowser.NextElement' }) }
+        @{ Grid = 'Home'; X = 8; Y = 5; Caption = 'Select'; Style = 'style 2'
+           Commands = @(@{ ID = 'Speech.Stop' }, @{ ID = 'WebBrowser.SpeakJavascriptFunction'; commandid = 'Muse/Home/Select' }) }
         # More Tools: Muse's rail pages (right) and the items on them (left). Prev and Next item outline an item and say its first line,
         # Read item says all of it, Open item presses it, Close shuts search or settings. Search jumps to the keyboard to type.
         @{ Grid = 'More Tools'; X = 0; Y = 1; Caption = 'Prev item'; Style = 'style 2'
