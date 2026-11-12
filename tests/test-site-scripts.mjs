@@ -127,26 +127,38 @@ try {
     check('Read options in the headphones gives the same text to the hotspot', await page.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b[b.length - 1]._grid_getHotSpotAuditoryFeedbackText(); }) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     check('Options/Read lists the newest message options', (await grid3(page, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     check('Option_2 presses the second option and says it', (await grid3(page, 'Muse/Options/Option_2')) === 'Give me a summary' && JSON.stringify(await page.evaluate(() => window.chosen)) === '["Give me a summary"]');
-    // Approvals: the short card first, Review opens the full card, then the option cells read and press its buttons.
+    // Approvals: one Read options press opens Review and says the request; Up, Down and Select pick a button.
     const decisions = () => page.evaluate(() => window.decisions.splice(0));
+    const heardNow = () => page.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b.length ? b[b.length - 1]._grid_getHotSpotAuditoryFeedbackText() : ''; });
     const email = { primary: 'Send', more: ['Always allow for this recipient'], deny: ["Don't send"], title: 'Send this email in Gmail' };
     await page.evaluate((o) => window.addSummary(o), email);
-    check('Options/Read with the short card presses Review', (await grid3(page, 'Muse/Options/Read')) === 'A task needs review. Opening it. Press Read options again.' && await page.locator('[data-hatch-approval-primary-action]').count() === 1);
-    const said = await grid3(page, 'Muse/Options/Read');
-    check('Options/Read says the request and each button in order', said === "Send this email in Gmail. Send email to Pat. Subject: Lunch. See you at noon. 1, Send. 2, More choices. 3, Don't send.", said);
-    check('Option_2 on More choices opens the menu', (await grid3(page, 'Muse/Options/Option_2')) === 'More choices. Press Read options.');
+    await grid3(page, 'Muse/Options/Read_Headphones');
+    await page.waitForTimeout(600); // Grid 3 asks for the text at NextElement, after the cell's wait
+    const one = await heardNow();
+    check('one Read options press opens Review and says the request and its buttons', one === "Send this email in Gmail. Send email to Pat. Subject: Lunch. See you at noon. 1, Send. 2, More choices. 3, Don't send.", one);
+    const say = async (id) => { await grid3(page, id); return heardNow(); };
+    check('Down outlines the first button and says it', (await say('Muse/Options/Down_Headphones')) === 'Send' && await page.locator('.grid3-option').textContent() === 'Send');
+    check('Down again moves to More choices, Up goes back', (await say('Muse/Options/Down_Headphones')) === 'More choices' && (await say('Muse/Options/Up_Headphones')) === 'Send');
+    await say('Muse/Options/Down_Headphones');
+    check('Select on More choices opens the menu', (await grid3(page, 'Muse/Home/Select')) === 'More choices. Press Down.');
     await page.waitForTimeout(300);
-    const said2 = await grid3(page, 'Muse/Options/Read');
-    check('with the menu open, its entries take the place of More choices', said2.endsWith("1, Send. 2, Always allow for this recipient. 3, Don't send."), said2);
-    check('Option_3 presses Don\'t send', (await grid3(page, 'Muse/Options/Option_3')) === "Don't send" && JSON.stringify(await decisions()) === '["Don\'t send"]');
+    const menuSaid = [await say('Muse/Options/Down_Headphones'), await say('Muse/Options/Down_Headphones'), await say('Muse/Options/Down_Headphones')];
+    check('with the menu open, Down walks Send, the menu entry, Don\'t send', JSON.stringify(menuSaid) === JSON.stringify(['Send', 'Always allow for this recipient', "Don't send"]), JSON.stringify(menuSaid));
+    check('Select presses Don\'t send', (await grid3(page, 'Muse/Home/Select')) === "Don't send" && JSON.stringify(await decisions()) === '["Don\'t send"]');
     await page.evaluate(() => document.querySelectorAll('[role="menu"]').forEach((m) => m.remove()));
-    await page.evaluate((o) => window.addApproval(o), email);
-    check('Option_1 presses Send', (await grid3(page, 'Muse/Options/Option_1')) === 'Send' && JSON.stringify(await decisions()) === '["Send"]');
+    await page.evaluate((o) => window.addSummary(o), email);
+    await grid3(page, 'Muse/Options/Down_Headphones');
+    await page.waitForTimeout(600);
+    check('Down with only the short card opens Review and says the first button', (await heardNow()) === 'Send');
+    check('Select presses Send', (await grid3(page, 'Muse/Home/Select')) === 'Send' && JSON.stringify(await decisions()) === '["Send"]');
     await page.evaluate((o) => window.addApproval(o), { primary: 'Send', deny: ["Don't send"] });
     await page.waitForTimeout(2000);
     check('a new approval card chimes and shows the banner', (await page.locator('#grid3-banner').textContent()) === 'Muse needs your approval');
     await grid3(page, 'Muse/Options/Option_2');
     await decisions();
+    // Message options: Up from nothing outlines the last option; Select presses it.
+    check('Up outlines the last message option', (await say('Muse/Options/Up_Headphones')) === 'Start over');
+    check('Select presses the outlined message option', (await grid3(page, 'Muse/Home/Select')) === 'Start over' && (await page.evaluate(() => window.chosen.at(-1))) === 'Start over');
     check('with no approval, the options are the message options again', (await grid3(page, 'Muse/Options/Read')).startsWith('1, Tell me more.'));
     await grid3(page, 'Muse/Panel/Toggle');
     check('Panel/Toggle opens the avatar panel', await page.locator('#panel').count() === 1);
@@ -173,7 +185,7 @@ try {
     const page = await context.newPage();
     await page.goto('https://muse.ai/');
     console.log('-- Muse.gridset commandids (mock page, no page script injected)');
-    check('built set carries every Muse command', ['Home/Read_Selected_Message', 'Home/Previous_Message', 'Home/Next_Message', 'Home/Next_Chat', 'Home/Focus_Message_Input', 'Chats/Select', 'Chats/Toggle', 'Panel/Toggle'].every((k) => ids[k]), Object.keys(ids).join(', '));
+    check('built set carries every Muse command', ['Home/Read_Selected_Message', 'Home/Previous_Message', 'Home/Next_Message', 'Home/Next_Chat', 'Home/Focus_Message_Input', 'Home/Select', 'Chats/Toggle', 'Panel/Toggle'].every((k) => ids[k]), Object.keys(ids).join(', '));
     check('commandids hold no space, hyphen or slash', Object.values(ids).every((id) => !/[ \-\/]/.test(id)));
     check('GridCommands absent before the first press', await page.evaluate(() => typeof window.GridCommands === 'undefined'));
     check('cell commandids are short calls; one loader per grid holds the script', Object.entries(ids).every(([k, id]) => k === 'Load' || id.length < 300) && ids['Load']?.length > 3000, `longest call ${Math.max(...Object.entries(ids).filter(([k]) => k !== 'Load').map(([, id]) => id.length))} chars`);
@@ -208,7 +220,7 @@ try {
     check('unpinned: first Next chat opens the panel and outlines the current chat', (await rows()) === 3 && (await runBuilt(page, ids['Home/Read_Selected_Chat_Name'])) === 'Main chat', `first Read chat said "${first}"`);
     await runBuilt(page, ids['Home/Next_Chat']);
     check('unpinned: Next chat names the next chat at once', (await runBuilt(page, ids['Home/Read_Selected_Chat_Name'])) === 'Weekly briefing');
-    check('unpinned: Select chat says it', (await runBuilt(page, ids['Chats/Select'])) === 'Weekly briefing');
+    check('unpinned: Select chat says it', (await runBuilt(page, ids['Home/Select'])) === 'Weekly briefing');
     await page.waitForTimeout(1000);
     check('unpinned: Select chat opens it, closes the panel and uncovers the messages', JSON.stringify(await page.evaluate(() => window.opened)) === '["Weekly briefing"]' && (await rows()) === 0 && await page.locator('#cover').count() === 0);
     await runBuilt(page, ids['Chats/Toggle']);
@@ -217,7 +229,8 @@ try {
     await runBuilt(page, ids['Chats/Toggle']);
     await page.waitForTimeout(300);
     check('unpinned: Chats opens and closes the panel', openRows === 3 && (await rows()) === 0);
-    check('Option 1 presses the first option', (await runBuilt(page, ids['Options/Option_1'])) === 'Tell me more');
+    await runBuilt(page, ids['Options/Down_Headphones']);
+    check('Down then Select presses the first option', (await runBuilt(page, ids['Home/Select'])) === 'Tell me more');
     // Rail pages and their items (More Tools grid).
     const clicked = () => page.evaluate(() => window.clicked);
     const step = async (id) => { await runBuilt(page, ids[id]); return runBuilt(page, ids['Items/Read']); };

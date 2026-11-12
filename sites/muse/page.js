@@ -124,6 +124,7 @@
 
   // Moves the outline. If the panel was closed, the first press opens it and outlines the current chat.
   function moveChat(step) {
+    focus.kind = 'chat';
     const rows = chatRows();
     if (rows.length) {
       const marked = rows.findIndex((r) => r.classList.contains(CHAT_MARK));
@@ -277,6 +278,7 @@
   function clearItems() { document.querySelectorAll('.' + ITEM_MARK).forEach((e) => e.classList.remove(ITEM_MARK)); item.name = ''; }
 
   function moveItem(step) {
+    focus.kind = 'item';
     const list = items();
     if (!list.length) { item.name = 'No items'; return; }
     const marked = list.findIndex((e) => e.classList.contains(ITEM_MARK));
@@ -432,6 +434,55 @@
     return text;
   }
 
+  // Up, Down and Select (operator, 2026-11-12). Up and Down move an outline over the choices: the approval
+  // card's buttons while a request waits, else the newest message's options. Select presses what was moved last:
+  // an option, a chat (Prev and Next chat) or an item (More's Prev and Next item).
+  const OPTION_MARK = 'grid3-option';
+  const focus = { kind: '' };
+  const option = { name: '' };
+  const optionList = () => { const card = approvalCard(); return card ? choices(card) : options().map((el) => ({ el, name: textOf(el) })); };
+
+  function moveOption(step) {
+    focus.kind = 'option';
+    const list = optionList();
+    if (!list.length) { option.name = 'No options'; return option.name; }
+    const marked = list.findIndex((c) => c.el.classList.contains(OPTION_MARK));
+    const next = marked < 0 ? (step > 0 ? 0 : list.length - 1) : (marked + step + list.length) % list.length;
+    document.querySelectorAll('.' + OPTION_MARK).forEach((e) => e.classList.remove(OPTION_MARK));
+    list[next].el.classList.add(OPTION_MARK);
+    list[next].el.scrollIntoView({ block: 'nearest' });
+    option.name = list[next].name;
+    return option.name;
+  }
+
+  // grid3HeadphoneSay gets its text only when Grid 3 asks for it (at WebBrowser.NextElement), so text that needs a
+  // moment, such as a request Muse is still opening after Review, is worked out then. Worked out once.
+  function sayLater(make) {
+    let text = null;
+    return grid3HeadphoneSay({ toString: () => (text === null ? (text = String(make())) : text) });
+  }
+
+  // One press: if only the short card is up, press Review and say the request or the first choice when Grid 3 asks.
+  function readOptionsHeadphones() {
+    if (!approvalCard() && openReview()) return sayLater(() => (approvalCard() ? readApproval(approvalCard()) : 'A task needs review. Press Read options again.'));
+    return grid3HeadphoneSay(readOptions());
+  }
+  function moveOptionHeadphones(step) {
+    if (!approvalCard() && openReview()) return sayLater(() => (approvalCard() ? moveOption(step) : 'A task needs review. Press again.'));
+    return grid3HeadphoneSay(moveOption(step));
+  }
+
+  function selectOutlined() {
+    if (focus.kind === 'chat') return selectChat();
+    if (focus.kind === 'item') return openItem();
+    const choice = optionList().find((c) => c.el.classList.contains(OPTION_MARK));
+    if (!choice) return chatRows().some((r) => r.classList.contains(CHAT_MARK)) ? selectChat() : 'Nothing selected. Press Up or Down.';
+    choice.el.classList.remove(OPTION_MARK);
+    if (choice.more) { choice.el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); choice.el.click(); return 'More choices. Press Down.'; }
+    choice.el.click();
+    return choice.name;
+  }
+
   const COMMANDS = {
     'Home/Focus_Message_Input': () => { messageBox()?.focus(); },
     'Home/Previous_Message': () => { const list = messages(); const i = selectedIndex(list); select(list, i < 0 ? list.length - 1 : i - 1); },
@@ -452,7 +503,11 @@
     'Options/Read': () => readOptions(),
     // Home's Read options cell: the same text into the headphones (templates/headphone.js); the cell runs
     // WebBrowser.NextElement after it (operator, 2026-11-12).
-    'Options/Read_Headphones': () => grid3HeadphoneSay(readOptions()),
+    'Options/Read_Headphones': () => readOptionsHeadphones(),
+    // Home's Up and Down cells (headphones, then WebBrowser.NextElement), and Select for everything.
+    'Options/Up_Headphones': () => moveOptionHeadphones(-1),
+    'Options/Down_Headphones': () => moveOptionHeadphones(1),
+    'Home/Select': () => selectOutlined(),
     'Options/Option_1': () => chooseOption(1),
     'Options/Option_2': () => chooseOption(2),
     'Options/Option_3': () => chooseOption(3),
@@ -509,7 +564,7 @@
 
   // "Get the Muse app" (the "Work with Muse anywhere" prompt) is hidden, so link scanning skips it.
   const css = `button[aria-label="Get the Muse app"]{display:none!important}
-    .${SELECTED},.${CHAT_MARK},.${ITEM_MARK}{outline:6px solid #ff8c00!important;outline-offset:4px!important;border-radius:12px}`;
+    .${SELECTED},.${CHAT_MARK},.${ITEM_MARK},.${OPTION_MARK}{outline:6px solid #ff8c00!important;outline-offset:4px!important;border-radius:12px}`;
   const addStyle = () => { const s = document.createElement('style'); s.textContent = css; document.head.appendChild(s); };
   if (document.head) addStyle(); else document.addEventListener('DOMContentLoaded', addStyle);
 })();

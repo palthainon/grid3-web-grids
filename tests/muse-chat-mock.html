@@ -141,7 +141,8 @@
     const card = document.createElement('div'); card.dataset.testid = 'hatch-inline-approval-card';
     card.setAttribute('data-hatch-background-approval-surface', 'true');
     card.innerHTML = '<div><p>A task needs review</p></div><div><button><span>Review</span></button></div>';
-    card.querySelector('button').onclick = () => { card.remove(); window.addApproval(opts); };
+    // The full card takes a moment to appear, as on the real page.
+    card.querySelector('button').onclick = () => { card.remove(); setTimeout(() => window.addApproval(opts), 300); };
     mainEl.insertBefore(card, document.getElementById('box'));
   };
   document.getElementById('avatar').onclick = () => {
