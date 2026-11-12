@@ -111,11 +111,16 @@ First check:
 
 ## Approvals and New side chat (2026-11-12)
 
-- While an approval card waits, Read options says the card's label, then "1, Allow once. 2, Deny. 3, Read the
-  request." Option 1 presses only a button or menu item that reads exactly "Allow once" or "Allow". It never
-  presses "Always allow" or any "Allow for ..." or "Allow all ..." choice, so Muse gets no standing permission. If
-  no one-time choice exists, it presses nothing and the banner says "No allow once choice. Ask for help."
-  Option 2 presses "Deny". Option 3 reads the request text without the button labels.
+- Superseded 2026-11-12 (later): the "Allow once only" rule. A real email request showed a short card first:
+  `[data-testid="hatch-inline-approval-card"][data-hatch-background-approval-surface]`, text "A task needs
+  review", one Review button. It sat above the message box. Review opens the full card. The old Grid 3 copy
+  missed the card, so Option 1 pressed an email link and Option 2 a message option.
+- Now: Read options or an Option cell presses Review first. Then Read options says the request (first 30 words)
+  and each button of the full card in order. Option 1 to 3 press button 1 to 3. The operator listed the buttons
+  for an email as "Send", "Always allow for this recipient" and "Don't send", and wants Philip to hear and pick
+  each one. A "More allow options" menu button counts as "More choices". Once open, its entries take its place.
+- Checked: the short card and its Review button found on the signed-in page in Chrome. The permission prompt
+  blocked an agent press of Review, so the full card's layout is from the operator's report and the mock.
 - A new approval card plays the chime and shows "Muse needs your approval".
 - Prev and Next chat outline "New side chat" in its place among the rows. Select chat opens it, and Type then
   writes in it. In the new chat, Chats presses "Back to main chat" and then opens the panel.

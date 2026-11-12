@@ -117,8 +117,9 @@
     const first = button(primary); first.dataset.hatchApprovalPrimaryAction = 'true';
     card.append(body, first);
     if (more.length) {
-      const m = document.createElement('button'); m.setAttribute('aria-label', 'More allow options');
+      const m = document.createElement('button'); m.setAttribute('aria-label', 'More allow options'); m.setAttribute('aria-expanded', 'false');
       m.onclick = () => setTimeout(() => {
+        m.setAttribute('aria-expanded', 'true');
         const menu = document.createElement('div'); menu.setAttribute('role', 'menu');
         menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') menu.remove(); });
         for (const t of more) { const i = document.createElement('div'); i.setAttribute('role', 'menuitem'); i.textContent = t;
@@ -128,6 +129,15 @@
       card.appendChild(m);
     }
     for (const t of deny) card.appendChild(button(t));
+    mainEl.insertBefore(card, document.getElementById('box'));
+  };
+  // The short card Muse shows first (seen 2026-11-12): "A task needs review" and a Review button that opens the
+  // full card. addSummary(options) adds it; Review calls addApproval(options).
+  window.addSummary = (opts) => {
+    const card = document.createElement('div'); card.dataset.testid = 'hatch-inline-approval-card';
+    card.setAttribute('data-hatch-background-approval-surface', 'true');
+    card.innerHTML = '<div><p>A task needs review</p></div><div><button><span>Review</span></button></div>';
+    card.querySelector('button').onclick = () => { card.remove(); window.addApproval(opts); };
     mainEl.insertBefore(card, document.getElementById('box'));
   };
   document.getElementById('avatar').onclick = () => {
