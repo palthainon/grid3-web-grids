@@ -1,7 +1,10 @@
 // device-volume.exe: change the volume of one named playback device, without a window.
 // Grid 3's own device volume cells (ComputerControl.DeviceVolume) change only the Windows default device.
-// Usage: device-volume.exe "<part of the device name>" <+10 | -10 | mute>
+// Usage: device-volume.exe "<part of the device name>" <+10 | -10 | mute | default>
 //        device-volume.exe status   (logs each device: volume, mute, default, and the apps that play on it)
+// "default" makes the device the Windows default (console and multimedia roles, not communications). Apps that
+// follow the default (browsers, Join-In) move to it; Grid 3 voices set to a named device stay where they are.
+// It uses IPolicyConfig, an undocumented Windows interface that the Sound settings and tools like nircmd use.
 // The name match ignores case and repeated spaces ("USB SPEAKER" matches "Speakers (USB  SPEAKER)").
 // Build with the C# compiler that ships with Windows: tools\install-device-volume.ps1
 using System;
@@ -104,6 +107,25 @@ static class DeviceVolume
         int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
     }
 
+    [ComImport, Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")] class PolicyConfigClient { }
+
+    [ComImport, Guid("F8679F50-850A-41CF-9C72-430F290290C8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface IPolicyConfig
+    {
+        int GetMixFormat(string id, IntPtr format);
+        int GetDeviceFormat(string id, bool isDefault, IntPtr format);
+        int ResetDeviceFormat(string id);
+        int SetDeviceFormat(string id, IntPtr endpointFormat, IntPtr mixFormat);
+        int GetProcessingPeriod(string id, bool isDefault, IntPtr defaultPeriod, IntPtr minimumPeriod);
+        int SetProcessingPeriod(string id, IntPtr period);
+        int GetShareMode(string id, IntPtr mode);
+        int SetShareMode(string id, IntPtr mode);
+        int GetPropertyValue(string id, bool store, IntPtr key, IntPtr value);
+        int SetPropertyValue(string id, bool store, IntPtr key, IntPtr value);
+        int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string id, int role);
+        int SetEndpointVisibility(string id, bool visible);
+    }
+
     [StructLayout(LayoutKind.Sequential)] struct PropertyKey { public Guid fmtid; public int pid; }
     [StructLayout(LayoutKind.Sequential)] struct PropVariant { public short vt; short r1, r2, r3; public IntPtr p; IntPtr p2; }
 
@@ -190,7 +212,7 @@ static class DeviceVolume
                 File.AppendAllText(log, DateTime.Now.ToString("s") + " status:" + Status(enumerator, devices, count) + "\r\n");
                 return 0;
             }
-            if (args.Length != 2) throw new ArgumentException("Usage: device-volume.exe \"<device name>\" <+10|-10|mute>, or device-volume.exe status");
+            if (args.Length != 2) throw new ArgumentException("Usage: device-volume.exe \"<device name>\" <+10|-10|mute|default>, or device-volume.exe status");
             string want = Normalize(args[0]).ToLowerInvariant();
             string seen = "";
             for (int i = 0; i < count; i++)
@@ -200,6 +222,16 @@ static class DeviceVolume
                 string name = FriendlyName(device);
                 seen += (seen.Length > 0 ? "; " : "") + name;
                 if (!Normalize(name).ToLowerInvariant().Contains(want)) continue;
+                if (args[1] == "default")
+                {
+                    string id;
+                    device.GetId(out id);
+                    var policy = (IPolicyConfig)new PolicyConfigClient();
+                    Marshal.ThrowExceptionForHR(policy.SetDefaultEndpoint(id, 0)); // console
+                    Marshal.ThrowExceptionForHR(policy.SetDefaultEndpoint(id, MultimediaRole));
+                    File.AppendAllText(log, DateTime.Now.ToString("s") + " " + name + " is now the Windows default\r\n");
+                    return 0;
+                }
                 var volume = Activate<IAudioEndpointVolume>(device);
                 var context = Guid.Empty;
                 if (args[1] == "mute")

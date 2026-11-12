@@ -10,7 +10,7 @@ column,row from 0.
 |---|---|---|
 | Home | 5x3 | 0,0 1 Headphones and 1,0 2 Speaker (SpeakNow with and without the audio feedback voice). 2,0 Web test. 3,0 Exit (Grid Explorer). 4,0 Volume cells. 0,1 to 2,1 sign-in pages (Gmail, Outlook, Google Messages; a person signs in). 3,1 Cells to copy. 0,2 Stop speaking. 1,2 Device test. 2,2 Email test. 3,2 Text message test |
 | Cells to copy | 4x3 | 0,0 and 1,0 Grid 3 "Change audio device" cells (they fill in Grid 3's device order). 0,2 Speaker check. 2,2 Back. 3,2 Exit |
-| Volume | 4x3 | 0,0 Speaker louder. 1,0 Speaker quieter. 0,1 Headphones louder. 1,1 Headphones quieter. 2,0 Speaker check. 2,1 Headphones check. 3,1 Log volume status. 2,2 Back. 3,2 Exit |
+| Volume | 4x3 | 0,0 Speaker louder. 1,0 Speaker quieter. 0,1 Headphones louder. 1,1 Headphones quieter. 2,0 Speaker check. 2,1 Headphones check. 3,1 Log volume status. 0,2 Media to speaker. 1,2 Media to headphones. 2,2 Back. 3,2 Exit |
 | Devices | 6x3 | Four device cells that also speak a test sentence. 0,2 audio feedback test |
 | Email, Texts | 7x4 | Grid 3's email or SMS list, with device cells that switch and then read (`Email.Speak`, `Sms.Speak`) |
 | Web | 6x4 | example.com with `templates/headphone.js` reads |
@@ -22,6 +22,11 @@ The Volume page's cells run `%ALLUSERSAPPDATA%\grid3-web-grids\device-volume.exe
 
 - `device-volume.exe "<part of the device name>" +10` or `-10`: one named device, 10 points a press. A step up
   also unmutes. `mute` toggles mute.
+- `device-volume.exe "<part of the device name>" default`: makes that device the Windows default (console and
+  multimedia roles, not communications). Books and videos in Grid 3's browser and in apps such as Join-In move to
+  it at once. Grid 3's speaking voice and audio feedback stay on the devices named in Grid 3's settings. Grid 3's
+  own Device volume cells follow the new default. It uses IPolicyConfig, an undocumented Windows interface (the
+  same one nircmd and AudioDeviceCmdlets use).
 - `device-volume.exe status`: logs each device's volume and mute, which one is the Windows default, and each app
   on each device with its app volume.
 - Every run adds lines to `C:\ProgramData\grid3-web-grids\device-volume.log`. "no device matches" means the name
@@ -42,6 +47,8 @@ The match ignores case and repeated spaces. Keep a user's device names out of th
 
 ## Tested
 
+- 2026-11-12, test machine: `default` moved a live Chromium audio stream from the headset to the speakers and back
+  (status before and after each switch). Not pressed in Grid 3 yet.
 - 2026-11-12, test machine, Grid 3 3.0.104: Log volume status and Speaker louder pressed with `grid3-click`.
   Grid 3 started the exe both times (Grid 3.log), and the exe logged. The cells named devices that machine does
   not have, so no volume changed in Grid 3. The exe changed volume when run outside Grid 3.
