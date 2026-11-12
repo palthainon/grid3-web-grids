@@ -42,10 +42,11 @@ function DeviceCell($x, $y, $commands) {
     "<Cell X=`"$x`" Y=`"$y`"><Content><Commands>$($commands -join '')</Commands><ContentType>AutoContent</ContentType>" +
     "<ContentSubType>Speech.ChangeAudioDeviceAutoContent</ContentSubType><Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>"
 }
-# Runs device-volume.exe with no window. Grid 3 expands %APPDATA% in FileName (not %LOCALAPPDATA%: it has its own fixed list).
+# Runs device-volume.exe with no window. %ALLUSERSAPPDATA% is Grid 3's name for %ProgramData%. Not AppData: a
+# packaged app (such as the Claude desktop app) that installs there writes to its own private copy.
 function VolumeCell($x, $y, $caption, $device, $change) {
     $arguments = if ($device) { '"' + $device + '" ' + $change } else { $change }
-    Cell $x $y $caption @("<Command ID=`"ComputerControl.Run`">$(Param 'FileName' '%APPDATA%\grid3-web-grids\device-volume.exe')" +
+    Cell $x $y $caption @("<Command ID=`"ComputerControl.Run`">$(Param 'FileName' '%ALLUSERSAPPDATA%\grid3-web-grids\device-volume.exe')" +
         "$(Param 'Arguments' $arguments)$(Param 'AllowSwitchTo' 0)$(Param 'RunCommandType' 'Program')</Command>")
 }
 function WebCell($x, $y, $caption, $url) {
