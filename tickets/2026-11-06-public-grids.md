@@ -25,9 +25,17 @@ work:
      note: "Muse Library documents opened in a viewer that stayed on a spinner in Chrome; reading them is untested"}
   - {n: 7, name: headphone-reading, state: open, owner: maintainer,
      note: "Read long text in the audio feedback voice (headphones) so the room does not hear it. templates/headphone.js passes tests/test-headphone.mjs. Import grids/Headphone Test.gridset and press cells 1-4 to hear which device each uses. Then use it for Muse Read msg"}
+  - {n: 8, name: device-volume, state: done, date: 2026-11-12, owner: maintainer,
+     note: "Grid 3's device volume cells change only the Windows default device. tools/device-volume.cs steps one named device and logs a status (PR 40, 41, 65). Headphone Test > Volume runs it from ProgramData. Seen in Grid 3 on a test machine: a press starts the exe. docs/headphone-test.md"}
+  - {n: 9, name: grid3-click, state: done, date: 2026-11-12, owner: maintainer,
+     note: "Agents can press Grid 3 cells on a test machine: tools/install-grid3-click.ps1 (admin, once), tools/grid3-click.ps1, grid3-press skill (PR 58, 61, 63). Refuses web-page points. Never for the user's own device"}
 ```
 
 ## Status
+
+- 2026-11-12: Added tools/device-volume.cs and the Volume page in Headphone Test (item 8), and grid3-click with
+  the grid3-press skill so agents can press Grid 3 cells on a test machine (item 9). Grid 3's log path and the
+  AppData trap for packaged apps are in docs/grid3-internals.md.
 
 - 2026-11-08 (later): Added the accessibility-review skill (`tools/evaluate-gridset.ps1`, `tests/site-audit.js`,
   a cited checklist). Muse evaluation: `docs/evaluations/2026-11-08-muse.md`, seven ranked improvements, none
