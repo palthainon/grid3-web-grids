@@ -2,12 +2,17 @@
 # the audio feedback voice (headphones) or the speaking voice (main speaker). Import it, press each cell, listen.
 # Cell 3 runs templates\headphone.js on example.com, the route a site grid set can use for long text. Cell 5 is
 # Grid 3's own link cursor, which should speak each link in the headphones.
-# The Switch page moves the speaking voice to -Headphones, speaks, then back to -Speaker (Grid 3 device names,
-# as listed in Settings > Speech). Grid 3 reads the device when speech starts, so the switch back waits 1.5 s.
-# Usage: pwsh -File tools\build-headphone-test.ps1 [-Speaker '<name>'] [-Headphones '<name>']
+# Device, Email and Texts pages use Grid 3's own "Change audio device" auto-content cells. Each one names a device
+# and moves the speaking voice to it; the cell's own commands (a test sentence, Email.Speak, Sms.Speak) run as well.
+# A stored internal.changeaudiodeviceautocontentcell command does not work: Grid 3 casts its text parameter to a
+# device object (3.0.104, read 2026-11-09). The speaking voice stays on the last device pressed.
+# Volume page: cells that change the volume of one named device through tools\device-volume.exe (install it with
+# tools\install-device-volume.ps1). Grid 3's own device volume cells change only the Windows default device.
+# Usage: pwsh -File tools\build-headphone-test.ps1 [-SpeakerName 'USB AUDIO CODEC'] [-HeadphoneName 'AB13X']
 param(
-    [string]$Speaker = 'Speakers (Realtek(R) Audio)',
-    [string]$Headphones = 'Headset Earphone (Poly Blackwire 3310 Series)'
+    # Part of each device's Windows name, as device-volume.exe logs it. Defaults: a USB speaker and a USB headset.
+    [string]$SpeakerName = 'USB AUDIO CODEC',
+    [string]$HeadphoneName = 'AB13X'
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -32,9 +37,17 @@ function Script($id, $source) {
     $call = "_;function`tGridCommands(){};GridCommands._=function(){return(0,eval)(decodeURIComponent('$encoded'))};GridCommands._"
     "<Command ID=`"WebBrowser.$id`">$(Param 'commandid' $call)</Command>"
 }
-# Grid 3's audio-device auto-content command, usable in a plain cell: it sets the speaking voice's device and saves the user.
-function Device($device) { "<Command ID=`"internal.changeaudiodeviceautocontentcell`">$(Param 'indicatorenabled' 0)$(Param 'audio device' $device)</Command>" }
-function Pause($time) { "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' $time)$(Param 'cancellable' 0)</Command>" }
+# Grid 3 fills these cells in order with its audio devices and shows each device's name.
+function DeviceCell($x, $y, $commands) {
+    "<Cell X=`"$x`" Y=`"$y`"><Content><Commands>$($commands -join '')</Commands><ContentType>AutoContent</ContentType>" +
+    "<ContentSubType>Speech.ChangeAudioDeviceAutoContent</ContentSubType><Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>"
+}
+# Runs device-volume.exe with no window. Grid 3 expands %APPDATA% in FileName (not %LOCALAPPDATA%: it has its own fixed list).
+function VolumeCell($x, $y, $caption, $device, $change) {
+    $arguments = if ($device) { '"' + $device + '" ' + $change } else { $change }
+    Cell $x $y $caption @("<Command ID=`"ComputerControl.Run`">$(Param 'FileName' '%APPDATA%\grid3-web-grids\device-volume.exe')" +
+        "$(Param 'Arguments' $arguments)$(Param 'AllowSwitchTo' 0)$(Param 'RunCommandType' 'Program')</Command>")
+}
 function WebCell($x, $y, $caption, $url) {
     Cell $x $y $caption @("<Command ID=`"Jump.To`">$(Param 'grid' $webGrid)</Command>", "<Command ID=`"WebBrowser.NavigateUrl`">$(Param 'url' $url)</Command>")
 }
@@ -48,17 +61,22 @@ function Grid($gridName, $columns, $rows, $cells) {
     "<GridGuid>$(Get-Guid "$name/$gridName")</GridGuid>" +
     "<ColumnDefinitions>$('<ColumnDefinition />' * $columns)</ColumnDefinitions>" +
     "<RowDefinitions>$('<RowDefinition />' * $rows)</RowDefinitions>" +
-    "<AutoContentCommands /><Cells>$($cells -join '')</Cells></Grid>"
+    $(if (($cells -join '') -match 'ChangeAudioDeviceAutoContent') { '<AutoContentCommands><AutoContentCommandCollection AutoContentType="Speech.ChangeAudioDeviceAutoContent"><Commands><Command ID="AutoContent.Activate"><Parameter Key="autocontenttype">Speech.ChangeAudioDeviceAutoContent</Parameter></Command></Commands></AutoContentCommandCollection></AutoContentCommands>' } else { '<AutoContentCommands />' }) +
+    "<Cells>$($cells -join '')</Cells></Grid>"
 }
 
 $homeGrid = "$name - Home"
-$switchGrid = "$name - Switch"
+$deviceGrid = "$name - Devices"
+$copyGrid = "$name - Cells to copy"
+$volumeGrid = "$name - Volume"
 $webGrid = "$name - Web"
+$emailGrid = "$name - Email"
+$textGrid = "$name - Texts"
 $headphone = Get-Content (Join-Path $root 'templates\headphone.js') -Raw
 $web3 = 'Test three. If you hear this in your headphones, a web page can read long text to you privately.'
 $web4 = 'Test four. This web text should come from the main speaker.'
 $grids = [ordered]@{
-    $homeGrid = Grid $homeGrid 4 3 @(
+    $homeGrid = Grid $homeGrid 5 3 @(
         Cell 0 0 '1 Headphones' @(SpeakNow 'Test one. You should hear this in your headphones only.' 1)
         Cell 1 0 '2 Speaker' @(SpeakNow 'Test two. This should come from the main speaker.' 0)
         # Stock Start cells jump, then navigate, then wait for the page (see docs/grid3-internals.md).
@@ -66,7 +84,11 @@ $grids = [ordered]@{
             "<Command ID=`"WebBrowser.NavigateUrl`">$(Param 'url' 'https://example.com/')</Command>",
             "<Command ID=`"CommandExecution.Wait`">$(Param 'waittime' '00:00:04.0000000')$(Param 'cancellable' 1)</Command>")
         Cell 0 2 'Stop speaking' @('<Command ID="Speech.Stop" />')
-        Cell 1 2 'Switch test' @("<Command ID=`"Jump.To`">$(Param 'grid' $switchGrid)</Command>")
+        Cell 1 2 'Device test' @("<Command ID=`"Jump.To`">$(Param 'grid' $deviceGrid)</Command>")
+        Cell 4 0 'Volume cells' @("<Command ID=`"Jump.To`">$(Param 'grid' $volumeGrid)</Command>")
+        Cell 3 1 'Cells to copy' @("<Command ID=`"Jump.To`">$(Param 'grid' $copyGrid)</Command>")
+        Cell 2 2 'Email test' @("<Command ID=`"Jump.To`">$(Param 'grid' $emailGrid)</Command>")
+        Cell 3 2 'Text message test' @("<Command ID=`"Jump.To`">$(Param 'grid' $textGrid)</Command>")
         # Sign-in checks for web mail and texts in Grid 3's browser. A person signs in; agents never enter passwords.
         (WebCell 0 1 'Gmail sign-in' 'https://mail.google.com/')
         (WebCell 1 1 'Outlook sign-in' 'https://outlook.live.com/mail/')
@@ -74,14 +96,70 @@ $grids = [ordered]@{
         # Jump.Home only reaches this set's own start grid; Grid Explorer is the way out of the set.
         Cell 3 0 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
     )
-    $switchGrid = Grid $switchGrid 4 3 @(
-        Cell 0 0 '6 Switch read (headphones)' @((Device $Headphones), (SpeakNow 'Test six. This uses the speaking voice, moved to your headphones for this reading only.' 0), (Pause '00:00:01.5000000'), (Device $Speaker))
-        Cell 1 0 '7 Long switch read (headphones)' @((Device $Headphones), (SpeakNow 'Test seven, part one. This long text checks whether Grid 3 keeps a long reading in the headphones after it switches back. Part two. If you hear this part on the main speaker, Grid 3 chose the device again for each piece of text. Part three. The email and text message readings are long, so this matters. Part four. Last part. If all four parts were in the headphones, the switch cell works for long messages.' 0), (Pause '00:00:01.5000000'), (Device $Speaker))
-        Cell 2 0 '8 Speaker check' @(SpeakNow 'Test eight. After a switch reading, this should come from the main speaker.' 0)
-        Cell 3 0 'Stop speaking' @('<Command ID="Speech.Stop" />')
-        Cell 0 2 'Reset to speaker' @((Device $Speaker), (SpeakNow 'Speech is on the main speaker.' 0))
+    # Plain device cells (no extra commands) to copy into an email or text grid in Edit mode.
+    $copyGrid = Grid $copyGrid 4 3 @(
+        DeviceCell 0 0 @()
+        DeviceCell 1 0 @()
+        Cell 2 0 'Copy both device cells (Edit mode)' @()
+        Cell 0 2 'Speaker check' @(SpeakNow 'This plays on the device picked last.' 0)
         Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
         Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+    )
+    # Copy these into a media grid's volume page in Edit mode, in place of its Device volume cells.
+    $volumeGrid = Grid $volumeGrid 4 3 @(
+        VolumeCell 0 0 'Speaker louder' $SpeakerName '+10'
+        VolumeCell 1 0 'Speaker quieter' $SpeakerName '-10'
+        VolumeCell 0 1 'Headphones louder' $HeadphoneName '+10'
+        VolumeCell 1 1 'Headphones quieter' $HeadphoneName '-10'
+        Cell 2 0 'Speaker check' @(SpeakNow 'This plays on the device picked for speech.' 0)
+        Cell 2 1 'Headphones check' @(SpeakNow 'This is the audio feedback voice.' 1)
+        Cell 3 0 'Copy the volume cells (Edit mode)' @()
+        # Logs each device's volume, the Windows default and the apps on each device. Press it while media plays.
+        VolumeCell 3 1 'Log volume status' '' 'status'
+        Cell 2 2 'Back' @('<Command ID="Jump.Back" />')
+        Cell 3 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+    )
+    $deviceGrid = Grid $deviceGrid 6 3 @(
+        foreach ($i in 0..3) { DeviceCell $i 0 @(SpeakNow 'Test fifteen. This should play on the device this cell names.' 0) }
+        Cell 4 0 'Stop speaking' @('<Command ID="Speech.Stop" />')
+        Cell 5 0 'Back' @('<Command ID="Jump.Back" />')
+        Cell 0 2 '16 Audio feedback (headphones)' @(SpeakNow 'Test sixteen. This is the audio feedback voice.' 1)
+        Cell 5 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+    )
+    # Press the device cell that names the headphones to hear the email there. Speech stays on that device until
+    # a cell naming the speaker is pressed (here or on the Devices page).
+    $emailGrid = Grid $emailGrid 7 4 @(
+        '<Cell ColumnSpan="4" RowSpan="3"><Content><ContentType>LiveCell</ContentType><ContentSubType>Email.Messages</ContentSubType>' +
+            '<Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>'
+        Cell 4 0 'Previous email' @('<Command ID="Email.Previous" />')
+        Cell 4 1 'Next email' @('<Command ID="Email.Next" />')
+        Cell 4 2 'Open email' @('<Command ID="Email.Open" />')
+        Cell 5 0 'Email back' @('<Command ID="Email.Back" />')
+        Cell 5 1 'Device test' @("<Command ID=`"Jump.To`">$(Param 'grid' $deviceGrid)</Command>")
+        Cell 5 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+        foreach ($i in 0..3) { DeviceCell $i 3 @('<Command ID="Speech.Stop" />', '<Command ID="Email.Speak" />') }
+        Cell 6 0 'Read email' @('<Command ID="Speech.Stop" />', '<Command ID="Email.Speak" />')
+        Cell 6 1 'Bottom row: pick a device. It moves speech there and reads the email.' @()
+        Cell 6 3 '17 Speaker check' @(SpeakNow 'Test seventeen. This plays on the device picked last.' 0)
+        Cell 4 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
+        Cell 5 3 'Back' @('<Command ID="Jump.Back" />')
+    )
+    # Same for text messages (Sms.Speak). Needs a phone linked to Grid 3.
+    $textGrid = Grid $textGrid 7 4 @(
+        '<Cell ColumnSpan="4" RowSpan="3"><Content><ContentType>LiveCell</ContentType><ContentSubType>Sms.Messages</ContentSubType>' +
+            '<Style><BasedOnStyle>Default</BasedOnStyle></Style></Content></Cell>'
+        Cell 4 0 'Previous text' @('<Command ID="Sms.Previous" />')
+        Cell 4 1 'Next text' @('<Command ID="Sms.Next" />')
+        Cell 4 2 'Open text' @('<Command ID="Sms.Open" />')
+        Cell 5 0 'Text back' @('<Command ID="Sms.Back" />')
+        Cell 5 1 'Device test' @("<Command ID=`"Jump.To`">$(Param 'grid' $deviceGrid)</Command>")
+        Cell 5 2 'Exit (Grid Explorer)' @('<Command ID="Settings.GridExplorer" />')
+        foreach ($i in 0..3) { DeviceCell $i 3 @('<Command ID="Speech.Stop" />', '<Command ID="Sms.Speak" />') }
+        Cell 6 0 'Read text' @('<Command ID="Speech.Stop" />', '<Command ID="Sms.Speak" />')
+        Cell 6 1 'Bottom row: pick a device. It moves speech there and reads the text.' @()
+        Cell 6 3 '17 Speaker check' @(SpeakNow 'Test seventeen. This plays on the device picked last.' 0)
+        Cell 4 3 'Stop speaking' @('<Command ID="Speech.Stop" />')
+        Cell 5 3 'Back' @('<Command ID="Jump.Back" />')
     )
     $webGrid = Grid $webGrid 6 4 @(
         '<Cell ColumnSpan="6" RowSpan="3"><Content><ContentType>Workspace</ContentType><ContentSubType>WebBrowser</ContentSubType>' +

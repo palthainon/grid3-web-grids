@@ -89,11 +89,52 @@ try {
     await grid3(page, 'Muse/Chats/Toggle');
     await page.waitForTimeout(600);
     check('Chats/Toggle opens the panel', (await rowCount()) === 3);
+    const panelItems = [];
+    for (let i = 0; i < 4; i++) { await grid3(page, 'Muse/Items/Next'); panelItems.push(await grid3(page, 'Muse/Items/Read')); }
+    check('chat panel: items are its controls, with the hidden More thread actions', JSON.stringify(panelItems) === JSON.stringify(['Side chat options', 'Main chat', 'More thread actions, Main chat', 'Weekly briefing']), JSON.stringify(panelItems));
+    await grid3(page, 'Muse/Items/Previous');
+    await grid3(page, 'Muse/Items/Open');
+    check('chat panel: Open item presses the hidden More thread actions', JSON.stringify(await page.evaluate(() => window.threadActions)) === '["Main chat"]');
     await grid3(page, 'Muse/Chats/Toggle');
     await page.waitForTimeout(300);
     check('Chats/Toggle closes it again', (await rowCount()) === 0);
+    // New side chat: Prev and Next chat reach the "New side chat" button; Select chat presses it. In the new
+    // chat there is no Chats button, so Chats goes back to Main chat first and then opens the panel.
+    await grid3(page, 'Muse/Chats/Toggle');
+    await page.waitForTimeout(600);
+    await grid3(page, 'Muse/Home/Previous_Chat');
+    await grid3(page, 'Muse/Home/Previous_Chat');
+    check('Previous_Chat past Main chat wraps to New side chat', (await grid3(page, 'Muse/Home/Read_Selected_Chat_Name')) === 'New side chat');
+    check('Chats/Select presses New side chat and says it', (await grid3(page, 'Muse/Chats/Select')) === 'New side chat' && (await page.evaluate(() => window.opened.at(-1))) === 'New side chat');
+    await page.waitForTimeout(600);
+    check('the new side chat has no Chats button', !(await page.locator('#trigger').isVisible()) && await page.locator('#backMain').isVisible());
+    await grid3(page, 'Muse/Chats/Toggle');
+    await page.waitForTimeout(800);
+    check('Chats/Toggle in a new side chat goes back to Main chat and opens the panel', (await rowCount()) === 3 && await page.locator('[data-testid="hatch-thread-row"][aria-current="page"]').textContent() === 'Main chat');
+    await grid3(page, 'Muse/Chats/Toggle');
+    await page.waitForTimeout(300);
     check('Options/Read lists the newest message options', (await grid3(page, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     check('Option_2 presses the second option and says it', (await grid3(page, 'Muse/Options/Option_2')) === 'Give me a summary' && JSON.stringify(await page.evaluate(() => window.chosen)) === '["Give me a summary"]');
+    // Approvals: while a card waits, the option cells answer it. Only a one-time allow is ever pressed.
+    const decisions = () => page.evaluate(() => window.decisions.splice(0));
+    await page.evaluate(() => window.addApproval({ primary: 'Always allow', more: ['Allow for this task', 'Allow once'], deny: ['Deny', 'Deny for this task'] }));
+    check('Options/Read with an approval says the request and the choices', (await grid3(page, 'Muse/Options/Read')) === 'Muse needs approval. 1, Allow once. 2, Deny. 3, Read the request.');
+    const request = await grid3(page, 'Muse/Options/Option_3');
+    check('Option_3 reads the request without button labels', request === 'Send email to Pat. Subject: Lunch. See you at noon.', request);
+    check('Option_1 skips Always allow and picks Allow once from the menu', (await grid3(page, 'Muse/Options/Option_1')) === 'Allow once' && await page.waitForTimeout(600).then(decisions) .then((d) => JSON.stringify(d) === '["Allow once"]'));
+    await page.evaluate(() => window.addApproval({ primary: 'Allow', more: ['Always allow'] }));
+    check('Option_1 presses a plain Allow button', (await grid3(page, 'Muse/Options/Option_1')) === 'Allowed once' && JSON.stringify(await decisions()) === '["Allow"]');
+    await page.evaluate(() => window.addApproval({ primary: 'Always allow', more: ['Allow for this task'] }));
+    await grid3(page, 'Muse/Options/Option_1');
+    await page.waitForTimeout(3500);
+    check('Option_1 presses nothing when Muse offers no one-time allow', JSON.stringify(await decisions()) === '[]' && (await page.locator('#grid3-banner').textContent()) === 'No allow once choice. Ask for help.');
+    check('Option_2 presses Deny', (await grid3(page, 'Muse/Options/Option_2')) === 'Denied' && JSON.stringify(await decisions()) === '["Deny"]');
+    await page.evaluate(() => window.addApproval({ primary: 'Allow' }));
+    await page.waitForTimeout(2000);
+    check('a new approval card chimes and shows the banner', (await page.locator('#grid3-banner').textContent()) === 'Muse needs your approval');
+    await grid3(page, 'Muse/Options/Option_2');
+    await decisions();
+    check('with no approval, the options are the message options again', (await grid3(page, 'Muse/Options/Read')).startsWith('1, Tell me more.'));
     await grid3(page, 'Muse/Panel/Toggle');
     check('Panel/Toggle opens the avatar panel', await page.locator('#panel').count() === 1);
     await grid3(page, 'Muse/Chats/Toggle');
@@ -200,11 +241,28 @@ try {
     check('Search: keyboard Back closes an empty search', await page.locator('[data-testid="hatch-quick-search-frame"]').count() === 0);
     await runBuilt(page, ids['Places/Settings']);
     await page.waitForTimeout(400);
-    check('Settings: items are the sections, never Log out', (await step('Items/Next')) === 'General' && (await step('Items/Next')) === 'Connectors' && (await step('Items/Next')) === 'General');
+    const walk = async (n) => { const said = []; for (let i = 0; i < n; i++) said.push(await step('Items/Next')); return said; };
+    const settingsSaid = await walk(7);
+    check('Settings: items are the sections and every control in the section, never Log out, Reset Muse or Close',
+      JSON.stringify(settingsSaid) === JSON.stringify(['General', 'Connectors', 'Light', 'Dark, selected', 'Always ask, on', 'Ask for some actions, off', 'General']), JSON.stringify(settingsSaid));
+    await walk(5);
+    check('Settings: Open item on a choice turns it on and says so', (await runBuilt(page, ids['Items/Open'])) === 'Ask for some actions, on');
     await runBuilt(page, ids['Items/Close']);
     check('Settings: Close shuts the dialog', await page.locator('[role="dialog"]').count() === 0 && !(await clicked()).includes('Log out'));
     await runBuilt(page, ids['Places/Chat']);
     check('Chat: back to the chat', await page.evaluate(() => location.pathname === '/' && !document.querySelector('main').hidden));
+    // Chat page: the newest message's controls (options, Reply, React), then the page's own controls.
+    const chatSaid = await walk(6);
+    check('Chat: items are the message controls, then the page controls', JSON.stringify(chatSaid) === JSON.stringify(['Tell me more', 'Give me a summary', 'Start over', 'Reply', 'React', 'Settings']), JSON.stringify(chatSaid));
+    await runBuilt(page, ids['Items/Open']);
+    await page.waitForTimeout(300);
+    check('Chat: Open item on the Settings menu button opens the menu, and its entries become the items', (await step('Items/Next')) === 'Keyboard shortcuts');
+    await runBuilt(page, ids['Items/Close']);
+    check('Chat: Close shuts the menu', await page.locator('[role="menu"]').count() === 0);
+    await runBuilt(page, ids['Panel/Toggle']);
+    const panelSaid = await walk(3);
+    check('Muse panel: items are its tabs and entries, not Close panel', JSON.stringify(panelSaid) === JSON.stringify(['Activity, selected', 'Approvals', 'Send this email in Gmail']), JSON.stringify(panelSaid));
+    await runBuilt(page, ids['Panel/Toggle']);
     await page.reload();
     check('after a page load, a cell loads the script from localStorage without the loader', (await runBuilt(page, ids['Home/Read_Selected_Message'])).startsWith('Muse: answer 12'));
     await page.reload();

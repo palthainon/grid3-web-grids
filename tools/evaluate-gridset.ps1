@@ -1,9 +1,9 @@
 # Evaluates a built grid set for access and readability, without Grid 3. It reports text contrast, ways out
 # of each grid (dead ends, Back loops), switch scan steps, cells that move between grids, cells that do nothing,
-# long captions and grids without Rest. The checklist and the reasons are in .claude/skills/accessibility-review.
+# long captions and grids without Rest. Each check names its rule (WCAG 2.2, W3C COGA, Smartbox) in its finding.
 # Scan steps are an estimate for group scanning then SimpleScan (cell by cell in reading order). Grid 3's real
 # order also depends on the user's access settings, which are not in the grid set.
-# Usage: pwsh -NoProfile -File tools\evaluate-gridset.ps1 -GridSet grids\Muse.gridset [-Out report.md]
+# Usage: pwsh -NoProfile -File tools\evaluate-gridset.ps1 -GridSet grids\Muse.gridset [-Out report.md] [-StepSeconds 2.4] [-CellsOnly]
 param(
     [Parameter(Mandatory)][string]$GridSet,
     [string]$Out,
@@ -11,7 +11,8 @@ param(
     [int]$MaxGroup = 12,            # cells in one scan group before a switch user waits too long
     [int]$MaxExitSteps = 6,         # switch steps to reach a grid's way out
     [int]$MaxCaption = 16,          # characters before a caption gets small or wraps
-    [double]$StepSeconds = 0        # the user's scan speed (UserSettings.xml ForwardScanSpeed) to show times
+    [double]$StepSeconds = 0,       # the user's scan speed (UserSettings.xml ForwardScanSpeed) to show times
+    [switch]$CellsOnly              # one cell at a time in reading order, scan blocks ignored (a user who cannot use groups)
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -31,7 +32,7 @@ $zip = [IO.Compression.ZipFile]::OpenRead((Resolve-Path $GridSet))
 try {
     $styleDoc = Read-Entry $zip 'Settings0/Styles/styles.xml'
     $settings = Read-Entry $zip 'Settings0/settings.xml'
-    $styles = @{}; foreach ($s in $styleDoc.SelectNodes('//Styles/Style')) { $styles[$s.Key] = $s }
+    $styles = @{}; if ($styleDoc) { foreach ($s in $styleDoc.SelectNodes('//Styles/Style')) { $styles[$s.Key] = $s } }   # some sets have no styles.xml
     $startGrid = $settings.DocumentElement.StartGrid
     $grids = [ordered]@{}
     foreach ($entry in @($zip.Entries | Where-Object { $_.FullName -match '^Grids/[^/]+/grid\.xml$' } | Sort-Object FullName)) {
@@ -109,13 +110,16 @@ foreach ($name in $grids.Keys) {
     while ($queue.Count) {
         $g = $queue.Dequeue(); if (-not $seen.Add($g)) { continue }
         foreach ($t in $jumpsTo[$g]) { if ($grids.Contains($t)) { $queue.Enqueue($t) } }
-        if ('Jump.Back' -in @($cells[$g] | ForEach-Object { $_.Commands })) { foreach ($p in $parents[$g]) { $queue.Enqueue($p) } }
+        $gIds = @($cells[$g] | ForEach-Object { $_.Commands })
+        if ('Jump.Back' -in $gIds) { foreach ($p in $parents[$g]) { $queue.Enqueue($p) } }
+        if ('Jump.Home' -in $gIds) { $queue.Enqueue($startGrid) }   # Jump.Home opens the start grid (settings.xml StartGrid)
     }
     $leavesSet = @($grids.Keys | Where-Object { $seen.Contains($_) } | ForEach-Object { $cells[$_] } | Where-Object { @($_.Commands | Where-Object { $_ -in 'Settings.ChangeGridSet', 'Settings.GridExplorer' }).Count }).Count
     if (-not $seen.Contains($startGrid) -and -not $leavesSet) { Add-Finding 'fix' 'exit' $name "Cannot get back to the start grid ($startGrid) or out of the grid set" }
 }
 
 # 3. Switch scanning: groups by ScanBlock, then reading order. Steps = groups passed + group select + cells passed + cell select.
+# With -CellsOnly: reading order across the whole grid. Steps = cells passed + cell select.
 $scanRows = foreach ($name in $grids.Keys) {
     $active = @($cells[$name] | Where-Object { $_.Active })
     if (-not $active.Count) { continue }
@@ -123,10 +127,14 @@ $scanRows = foreach ($name in $grids.Keys) {
     $steps = @{}; $gi = 0
     foreach ($g in $groups) {
         $gi++; $ci = 0
-        foreach ($c in @($g.Group | Sort-Object Y, X)) { $ci++; $steps[$c] = $gi + $ci }
-        if ($groups.Count -gt 1 -and $g.Count -gt $MaxGroup) { Add-Finding 'improve' 'scan' $name "Group $($g.Name) has $($g.Count) cells (more than $MaxGroup)" }
+        foreach ($c in @($g.Group | Sort-Object Y, X)) { $ci++; if (-not $CellsOnly) { $steps[$c] = $gi + $ci } }
+        if (-not $CellsOnly -and $groups.Count -gt 1 -and $g.Count -gt $MaxGroup) { Add-Finding 'improve' 'scan' $name "Group $($g.Name) has $($g.Count) cells (more than $MaxGroup)" }
     }
-    if ($groups.Count -eq 1 -and $active.Count -gt $MaxGroup) { Add-Finding 'improve' 'scan' $name "One scan group of $($active.Count) cells: a switch user steps through every cell in reading order" }
+    if ($CellsOnly) {
+        $i = 0; foreach ($c in @($active | Sort-Object Y, X)) { $i++; $steps[$c] = $i }
+        if ($groups.Count -gt 1) { Add-Finding 'check' 'scan' $name "$($groups.Count) scan groups set: a user who scans one cell at a time needs the pattern Scan cells one at a time, or the groups get in the way" }
+    }
+    elseif ($groups.Count -eq 1 -and $active.Count -gt $MaxGroup) { Add-Finding 'improve' 'scan' $name "One scan group of $($active.Count) cells: a switch user steps through every cell in reading order" }
     $exits = @($active | Where-Object { Test-Exit $_ $name })
     $exitSteps = if ($exits.Count) { ($exits | ForEach-Object { $steps[$_] } | Measure-Object -Minimum).Minimum } else { $null }
     if ($exitSteps -gt $MaxExitSteps) { Add-Finding 'improve' 'scan' $name "The nearest way out takes $exitSteps switch steps (more than $MaxExitSteps)" }
@@ -174,6 +182,7 @@ $md = [Text.StringBuilder]::new()
 [void]$md.AppendLine('## Switch scan steps (estimate)').AppendLine()
 $time = { param($n) if ($StepSeconds -and $null -ne $n) { ' ({0:N0} s)' -f ($n * $StepSeconds) } else { '' } }
 if ($StepSeconds) { [void]$md.AppendLine("Times use $StepSeconds s per step.").AppendLine() }
+if ($CellsOnly) { [void]$md.AppendLine('Steps count one cell at a time in reading order. Scan blocks are ignored.').AppendLine() }
 [void]$md.AppendLine('| Grid | Active cells | Groups | Largest group | Most steps | Steps to a way out |').AppendLine('|---|---|---|---|---|---|')
 foreach ($r in $scanRows) { [void]$md.AppendLine("| $($r.Grid) | $($r.Cells) | $($r.Groups) | $($r.Largest) | $($r.Worst)$(& $time $r.Worst) | $(if ($null -ne $r.Exit) { "$($r.Exit)$(& $time $r.Exit)" } else { 'none' }) |") }
 [void]$md.AppendLine().AppendLine('## Findings').AppendLine()

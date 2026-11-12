@@ -17,6 +17,8 @@ What `sites/muse/page.js` relies on. Seen on the signed-in page on 2026-11-06 in
 | Rail Chat icon | `a[data-testid="hatch-nav-chat"]` (`aria-expanded`) | A script click did not close the docked panel |
 | Chat rows | `[data-testid="hatch-thread-row"]`, `role="button"` | 9 rows: Main chat, WhatsApp, then side chats. The current row has `aria-current="page"` |
 | Chat row name | first line of the row's text | The WhatsApp row reads "WhatsApp" then "Channel conversation, view only" |
+| New side chat | `button[data-testid="hatch-chat-compose"]` (`aria-label="New side chat"`), after the channel rows and before the side chats | Not a `hatch-thread-row`. A click opens `/thread/new`, closes the panel and focuses the message box. Nothing is made until a message is sent. That page has **no Chats button**, only `button[aria-label="Back to main chat"]`. Seen 2026-11-12, Chrome |
+| Approval card | `[data-testid="hatch-inline-approval-card"]`, `role="group"`, `aria-label` such as "Muse needs approval" | Muse asks before some actions, such as sending an email. Chat stays paused until it is answered. Allow: the primary button (`data-hatch-approval-primary-action="true"`) plus a `More allow options` button whose menu holds `[role="menuitem"]` items. Deny: plain buttons ("Deny", "Deny for this task"). Labels come from Muse: "Allow", "Allow once", "Always allow", "Allow for this task", "Allow for this space", "Allow all ... actions". With several approvals the primary button is "Allow always" and "Allow once" is in the menu. Read from Muse's page code 2026-11-12 (no card was waiting, so not seen drawn) |
 | Avatar panel | open: `[role="button"][aria-label="Muse"]`, close: `[data-testid="hatch-status-panel-close"]` (`aria-label="Close panel"`) | |
 | "Work with Muse anywhere" | `button[aria-label="Get the Muse app"]` | page.js hides it |
 
@@ -30,7 +32,7 @@ What `sites/muse/page.js` relies on. Seen on the signed-in page on 2026-11-06 in
 | Ideas (`/ideas`) | `...-6964656173` | first button in each `[role="listitem"]` (24) | presses the idea (untested: may send it to Muse) | |
 | Goals (`/goals`) | `...-676f616c73` | the title button in each row with a `role="checkbox"` "Mark ..." (11) | opens the goal (untested) | the Mark checkbox |
 | Library (`/library/...`) | `...-6c696272617279` | the section links (`a[href^="/library"]`: Spaces, Documents, Images, Videos, Podcasts, System files) then `[data-testid="hatch-library-card-motion"]` cards | follows the link or card | |
-| Settings | `button[data-testid="hatch-dock-more"]` menu > "Settings Ctrl+," | section buttons in the dialog before "Log out" (General ... Legal info) | shows the section | Log out, Wallet changes |
+| Settings | `button[data-testid="hatch-dock-more"]` menu > "Settings Ctrl+," | the section buttons, then every control in the open section (see below) | shows the section, or presses the control | see the block list below |
 
 Reading and sub-pages (checked in Chrome 2026-11-06, later):
 - Feed: 24 cards, each headline, time, summary and Discuss. Prev and Next item say the headline. Read item says
@@ -106,6 +108,51 @@ First check:
 - Not pressed: Option 1, 2 and 3, Send. Each sends a message for the user, which agents must not do.
 - Known gap: after a page load the first Next or Prev chat press says nothing, because the chat names are
   unknown until the panel has opened once. Later presses name the chat at once.
+
+## Approvals and New side chat (2026-11-12)
+
+- While an approval card waits, Read options says the card's label, then "1, Allow once. 2, Deny. 3, Read the
+  request." Option 1 presses only a button or menu item that reads exactly "Allow once" or "Allow". It never
+  presses "Always allow" or any "Allow for ..." or "Allow all ..." choice, so Muse gets no standing permission. If
+  no one-time choice exists, it presses nothing and the banner says "No allow once choice. Ask for help."
+  Option 2 presses "Deny". Option 3 reads the request text without the button labels.
+- A new approval card plays the chime and shows "Muse needs your approval".
+- Prev and Next chat outline "New side chat" in its place among the rows. Select chat opens it, and Type then
+  writes in it. In the new chat, Chats presses "Back to main chat" and then opens the panel.
+- Checked: New side chat, Select chat and Chats on the signed-in page in Chrome 2026-11-12. The approval cells
+  passed against the mock only. They are untested on a real approval card, and untested in Grid 3.
+
+## Every control, and how the grid reaches it (2026-11-12)
+
+Inventory read on the signed-in page in Chrome 2026-11-12. More's Prev, Next, Read and Open item walk whatever
+is on top, in this order. Close shuts a menu (Escape) or the top dialog.
+
+| On top | Items | Seen on the real page |
+|---|---|---|
+| A menu | its entries | Settings menu (Keyboard shortcuts, Download apps, Report an issue, Settings), message More options (Copy, Share), thread actions (Pin, Rename, Archive), Side chat options (Show archived chats), Avatar options, a permission's Ask or Deny |
+| Search | the results | |
+| Settings | the 10 sections, then every control in the open section, sub-pages included ("Go back" first) | General: Meta Account, Language, Light, Dark, System, 9 colours. Connectors: Available, Connected, each connector, See all. Permissions: the 4 Ask choices ("Ask for some actions. Before actions that may share your information ..., on"), Connectors, Websites, Spaces, Scheduled tasks, Direct network protocols. Gmail's actions ("Send emails, Ask"). Wallet, Secure store, Messaging channels, Devices, Data controls, Help and support, Legal info |
+| Another dialog | its headings, paragraphs, list entries and controls, in page order | Goal details |
+| Muse panel | its tabs and the shown tab's entries | Activity (scheduled tasks and the activity list), Approvals (approvals history), Identity (Edit, SOUL, MEMORY) |
+| Chat panel | Side chat options, the rows, each row's More thread actions, Channels, Side chats, New side chat | |
+| Feed, Ideas, Goals, Library | the page's items, as before | |
+| The chat page or a space | the selected message's controls (its options, links, React, Reply, Copy response, More options), then the page's controls | Muse Dashboard, Create a space, Settings, Chats, Attach file, Muse |
+
+Spoken names: a choice says "on" or "off", a pressed button says "selected", a row's More thread actions names
+its chat. Text boxes are left out: Type and Search reach the message box and the search box.
+
+Never listed and never pressed: Log out, Reset Muse, Reset approvals to defaults, Reset to defaults, Delete,
+Remove, Disconnect, Add Link by Stripe, Add Shop Pay, Always allow, Allow always, Allow for ..., Allow all .... In
+Settings, also any choice that starts "Allow", so Philip cannot give a connector action standing permission.
+Gmail's "Send emails" offers only Ask and Deny (seen 2026-11-12). Close buttons are left out: More has Close,
+Home has Muse panel.
+
+A row's More thread actions shows only on hover. A script click opens its menu anyway (seen 2026-11-12). The Muse
+panel's tabs sit side by side, so only controls inside the panel's box count. While Muse's avatar reads "Muse,
+needs approval" and no card is on screen, Read options opens the Muse panel.
+
+Untested: Rename (it needs typing into a text box the grid does not focus), pressing Settings controls on the
+real page (only opening was tried), Open item on Attach file and Create a space. Not yet seen in Grid 3.
 
 ## How to check page.js against the real page
 

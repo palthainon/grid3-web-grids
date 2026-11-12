@@ -50,6 +50,8 @@ Read from `SensorySoftware.Grids.Storage.dll` by reflection (method below), so t
 | `ComputerControl.MoveMouseBy` | `x`, `y` | |
 | `ComputerControl.MouseClick` | `button` (Left; Right) | Clicks where the pointer is |
 | `ComputerControl.MouseWheelDown` / `Up` | `indicatorenabled`, `commandtype` (SingleClick; RepeatedClicks, Continuous), `repeatcount`, `repeatgap`, `holdduration` | Scrolls whatever is under the pointer |
+| `ComputerControl.DeviceVolume` / `DeviceMute` | `option` (Increase; Decrease), steps of 10 | Change only the Windows default playback device (multimedia role), not the device an app or a Grid 3 voice plays on (read in 3.0.104 code, 2026-11-12). For a named device, run `tools/device-volume.cs` (see below) |
+| `ComputerControl.Run` | `FileName`, `Arguments`, `AllowSwitchTo` (0; 1), `RunCommandType` (Program) | Shell-executes the file. `FileName` takes only Grid 3's own placeholders: `%APPDATA%`, `%PROGRAMFILES%`, `%PROFILE%`, `%TEMP%`, `%MYDOCUMENTS%` and a few more. `%LOCALAPPDATA%` is not one (3.0.104 code, 2026-11-12) |
 | `Speech.SpeakNow` | `text`, `useauditoryvoice` (False), `wait` | Speaks fixed text. `useauditoryvoice` 1 uses the audio feedback voice ("Use audio feedback voice" in the editor) |
 | `Speech.ReadCell` | `useauditoryvoice` (False), `wait` | Speaks the pressed cell's own caption |
 | `Speech.SpeakClipboard` | none | Speaks the clipboard with the speaking voice. It has no audio feedback option |
@@ -85,7 +87,16 @@ Grid 3 has two voices: the speaking voice (Settings > Speech, the main speaker) 
 - Tested by `node tests	est-headphone.mjs` with Grid 3's own page script, loaded from the local install.
   `grids/Headphone Test.gridset` is the check on a device: each cell says which device it should play on.
   Seen 2026-11-06 on a test machine (3.0.104): `SpeakNow` with and without the audio feedback voice played on the
-  right devices. The two-button route is not yet heard. Grid 3 3.0.93 may differ.
+  right devices. The two-button route played in the headphones too. Grid 3 3.0.93 may differ.
+- **Email and SMS: move the speaking voice to the headphones.** A stored `internal.changeaudiodeviceautocontentcell`
+  command does nothing useful: `GetAudioDevice` casts the `audio device` parameter to `IAudioDeviceIdentity`, and
+  a grid file can only hold text. Seen 2026-11-09 on a test machine: a cell with it before `Email.Speak` read on the
+  speaker. Grid 3's own auto-content cells (`Speech.ChangeAudioDeviceAutoContent`, one per audio device, in the
+  order of `ISpeechService.Devices`) pass the real device. `AutoContentSource.ShouldExecuteUserCommands` is true,
+  so the cell's own commands (`Email.Speak`, `Sms.Speak`) run too. The device change is saved and stays until a
+  cell naming another device is pressed. `Email.Speak`, `Sms.Speak` and `SpeakClipboard` do not wait for the
+  reading to end (`blockUntilSpeechStopped` false). Whether the device command runs before the cell's own
+  commands is not yet heard (Headphone Test, Devices page, test 15).
 
 ### Page scripts in commandids (Grid 3 3.0.93, read 2026-11-06)
 

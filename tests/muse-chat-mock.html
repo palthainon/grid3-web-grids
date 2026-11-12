@@ -7,7 +7,10 @@
      Option buttons are plain buttons in the newest message. The avatar panel closes with "Close panel".
      Left rail: Chat, Search, Feed, Ideas, Goals, Library and the Settings menu, with the item markup each real
      page uses (feed cards, idea list items, goal rows with a Mark checkbox, library links and cards, the search
-     dialog's results, the Settings dialog's sections with Log out). -->
+     dialog's results, the Settings dialog's sections with Log out).
+     New side chat: a "New side chat" button (hatch-chat-compose) after the rows opens an empty chat with no
+     Chats button, only "Back to main chat" (seen 2026-11-12). addApproval() adds an approval card as Muse's
+     code draws it (read 2026-11-12): a primary allow button, a "More allow options" menu, and Deny buttons. -->
 <html><head><meta charset="utf-8"><title>Muse mock</title>
 <style>
   body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; }
@@ -24,7 +27,7 @@
   <div data-testid="hatch-nav-system-item-6964656173" aria-label="Ideas" onclick="go('/ideas')">i</div>
   <div data-testid="hatch-nav-system-item-676f616c73" aria-label="Goals" onclick="go('/goals')">g</div>
   <div data-testid="hatch-nav-system-item-6c696272617279" aria-label="Library" onclick="go('/library/artifacts')">l</div>
-  <button data-testid="hatch-dock-more" aria-label="Settings" onclick="openMore()">m</button>
+  <button data-testid="hatch-dock-more" aria-label="Settings" aria-haspopup="menu" onclick="openMore()">m</button>
 </div>
 <div id="page"></div>
 <div id="surface" data-testid="hatch-side-chats-panel-sliding-surface">
@@ -33,6 +36,7 @@
 </div>
 <main>
   <button data-testid="hatch-chat-switcher-trigger" id="trigger">Chats Open chat and side chats</button>
+  <button aria-label="Back to main chat" id="backMain" hidden>←</button>
   <div role="button" aria-label="Muse" id="avatar">Muse</div>
   <button aria-label="Get the Muse app" id="getApp">⤓</button>
   <div id="scroller"><div role="log" aria-label="Chat messages" id="log"></div></div>
@@ -41,12 +45,13 @@
 <script>
   window.opened = []; window.replied = []; window.chosen = [];
   const CHATS = [['Main chat'], ['Weekly briefing'], ['Sports roundup', 'Channel conversation, view only']];
-  let pinned = !location.search.includes('unpinned'), open = pinned, current = 'Main chat';
+  let pinned = !location.search.includes('unpinned'), open = pinned, current = 'Main chat', newChat = false;
   const surface = document.getElementById('surface'), nav = document.getElementById('nav'), trigger = document.getElementById('trigger');
   function draw() {
     nav.innerHTML = '';
     document.getElementById('cover')?.remove();
-    trigger.hidden = pinned;
+    trigger.hidden = pinned || newChat;
+    document.getElementById('backMain').hidden = !newChat;
     surface.hidden = !open;
     surface.classList.toggle('overlay', !pinned);
     if (!open) return;
@@ -55,10 +60,18 @@
       const r = document.createElement('div'); r.setAttribute('role', 'button'); r.dataset.testid = 'hatch-thread-row';
       r.textContent = name; if (sub) { const s = document.createElement('div'); s.textContent = sub; r.appendChild(s); }
       if (name === current) r.setAttribute('aria-current', 'page');
+      // As on the real page: More thread actions shows only on hover, but a click still works.
+      const more = document.createElement('button'); more.setAttribute('aria-label', 'More thread actions'); more.style.display = 'none';
+      more.onclick = (e) => { e.stopPropagation(); window.threadActions = (window.threadActions || []).concat(name); }; r.appendChild(more);
       r.onclick = () => { window.opened.push(name); current = name; draw(); };
       nav.appendChild(r);
     }
+    const compose = document.createElement('button'); compose.dataset.testid = 'hatch-chat-compose';
+    compose.setAttribute('aria-label', 'New side chat');
+    compose.onclick = () => { window.opened.push('New side chat'); newChat = true; open = false; current = ''; draw(); };
+    nav.appendChild(compose);
   }
+  document.getElementById('backMain').onclick = () => { newChat = false; current = 'Main chat'; draw(); };
   trigger.onclick = () => { if (open) { open = false; draw(); } else setTimeout(() => { open = true; draw(); }, 200); };
   document.getElementById('opts').onclick = () => {
     const menu = document.createElement('div'); menu.setAttribute('role', 'menu');
@@ -89,10 +102,35 @@
     const mark = document.createElement('button'); mark.setAttribute('aria-label', text.startsWith('You') ? 'Copy response' : 'React');
     outer.append(bubble, reply, mark); log.appendChild(outer);
   };
+  // Tests add an approval card: addApproval({ primary: 'Always allow', more: ['Allow once'], deny: ['Deny'] }).
+  // Presses go to window.decisions. The card sits below the messages, outside the log.
+  window.decisions = [];
+  window.addApproval = ({ primary, more = [], deny = ['Deny'], title = 'Muse needs approval' }) => {
+    const card = document.createElement('div'); card.dataset.testid = 'hatch-inline-approval-card';
+    card.setAttribute('role', 'group'); card.setAttribute('aria-label', title);
+    const body = document.createElement('div'); body.textContent = 'Send email to Pat. Subject: Lunch. See you at noon.';
+    const button = (text, aria) => { const b = document.createElement('button'); b.textContent = aria ? '' : text; if (aria) b.setAttribute('aria-label', aria);
+      b.onclick = () => { window.decisions.push(text); card.remove(); }; return b; };
+    const first = button(primary); first.dataset.hatchApprovalPrimaryAction = 'true';
+    card.append(body, first);
+    if (more.length) {
+      const m = document.createElement('button'); m.setAttribute('aria-label', 'More allow options');
+      m.onclick = () => setTimeout(() => {
+        const menu = document.createElement('div'); menu.setAttribute('role', 'menu');
+        menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') menu.remove(); });
+        for (const t of more) { const i = document.createElement('div'); i.setAttribute('role', 'menuitem'); i.textContent = t;
+          i.onclick = () => { window.decisions.push(t); menu.remove(); card.remove(); }; menu.appendChild(i); }
+        menu.tabIndex = -1; document.body.appendChild(menu); menu.focus();
+      }, 100);
+      card.appendChild(m);
+    }
+    for (const t of deny) card.appendChild(button(t));
+    mainEl.insertBefore(card, document.getElementById('box'));
+  };
   document.getElementById('avatar').onclick = () => {
     if (document.getElementById('panel')) return;
     const a = document.createElement('aside'); a.id = 'panel';
-    a.innerHTML = '<button data-testid="hatch-status-panel-close" aria-label="Close panel">×</button>Avatar';
+    a.innerHTML = '<button data-testid="hatch-status-panel-close" aria-label="Close panel">×</button>Avatar<div><button aria-label="Activity" aria-pressed="true"></button><button aria-label="Approvals" aria-pressed="false"></button><button>Send this email in Gmail</button></div>';
     a.querySelector('button').onclick = () => a.remove();
     document.body.appendChild(a);
   };
@@ -127,7 +165,8 @@
   }
   function openMore() {
     const menu = el(`<div role="menu"><div role="menuitem">Keyboard shortcuts</div><div role="menuitem">Settings Ctrl+,</div></div>`);
-    menu.lastChild.onclick = () => { menu.remove(); document.body.appendChild(track(el(`<div role="dialog"><button>General</button><button>Connectors</button><button>Log out</button><button aria-label="Close" onclick="this.parentElement.remove()">x</button></div>`))); };
+    menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') menu.remove(); });
+    menu.lastChild.onclick = () => { menu.remove(); document.body.appendChild(track(el(`<div role="dialog"><button>General</button><button>Connectors</button><button>Log out</button><button aria-label="Close" onclick="this.parentElement.remove()">x</button><section><button aria-pressed="false">Light</button><button aria-pressed="true">Dark</button><label><input type="radio" name="ask" checked>Always ask</label><label><input type="radio" name="ask">Ask for some actions</label><button>Reset Muse</button><button>Allow</button><button>Reset to defaults</button></section></div>`))); };
     document.body.appendChild(menu);
   }
 </script>
