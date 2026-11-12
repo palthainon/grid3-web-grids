@@ -119,6 +119,14 @@ First check:
   and each button of the full card in order. Option 1 to 3 press button 1 to 3. The operator listed the buttons
   for an email as "Send", "Always allow for this recipient" and "Don't send", and wants Philip to hear and pick
   each one. A "More allow options" menu button counts as "More choices". Once open, its entries take its place.
+- Full card, seen 2026-11-12 after Review (operator allowed the press): it opens in the Muse panel,
+  `aria-label="Approval request for Gmail"`. Header `[data-testid="approval-panel-header"]` holds a details toggle
+  (a `div` with role button, "This task comes from the side chat ... Hide details"). Then the email preview, then
+  two `button`s: Send (primary) and Don't send. Only `button`s outside the header and preview count as choices.
+  Before this fix the toggle was choice 1, so Option 1 toggled details and Option 2 pressed Send. Read options
+  now says "Approval request for Gmail. Allow Muse to send this email in Gmail From: ... 1, Send. 2, Don't send."
+  Option 1 pressed Send on the real card (a test email to the operator, with the operator's approval). The card
+  closed.
 - Checked: the short card and its Review button found on the signed-in page in Chrome. The permission prompt
   blocked an agent press of Review, so the full card's layout is from the operator's report and the mock.
 - A new approval card plays the chime and shows "Muse needs your approval".

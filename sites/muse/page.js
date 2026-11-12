@@ -349,11 +349,13 @@
   const textOf = (el) => clean(el.innerText || label(el));
   const NOT_A_CHOICE = /^(review|view and edit message|edit|view|show more|show less|copy)$/i;
 
+  // Only real buttons count. The card's header holds a details toggle (a div with role button, "This task
+  // comes from the side chat ... Hide details"), and the preview holds the email (seen 2026-11-12).
   function choices(card) {
-    const preview = card.querySelector('[data-testid="hatch-approval-request-preview"]');
+    const skip = [...card.querySelectorAll('[data-testid="hatch-approval-request-preview"], [data-testid="approval-panel-header"]')];
     const list = [];
-    for (const b of all('button, [role="button"]', card)) {
-      if ((preview && preview.contains(b)) || !textOf(b) || NOT_A_CHOICE.test(textOf(b))) continue;
+    for (const b of all('button', card)) {
+      if (skip.some((s) => s.contains(b)) || !textOf(b) || NOT_A_CHOICE.test(textOf(b))) continue;
       if (label(b) === 'More allow options') {
         const menu = b.getAttribute('aria-expanded') === 'true' && openMenu();
         if (menu) list.push(...all('[role="menuitem"], [role="menuitemradio"]', menu).map((e) => ({ el: e, name: textOf(e) })));
@@ -382,9 +384,9 @@
 
   function readApproval(card) {
     const words = requestText(card).split(' ');
-    const request = words.slice(0, 30).join(' ').replace(/[.\s]+$/, '') + (words.length > 30 ? ' ...' : '');
+    const request = words.slice(0, 30).join(' ').replace(/[.\s]+$/, '') + (words.length > 30 ? ' ...' : '.');
     const list = choices(card).map((c, i) => `${i + 1}, ${c.name}.`).join(' ');
-    return `${card.getAttribute('aria-label') || 'Muse needs approval'}. ${request}. ${list || 'No choices found. Ask for help.'}`;
+    return `${card.getAttribute('aria-label') || 'Muse needs approval'}. ${request} ${list || 'No choices found. Ask for help.'}`;
   }
 
   function chooseApproval(card, n) {
