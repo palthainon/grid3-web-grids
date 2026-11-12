@@ -148,8 +148,9 @@ headphone text is worked out when Grid 3 asks for it at `WebBrowser.NextElement`
 same press says the request or the first button. Read options waits 2 s for this, Up and Down 1 s. Tested on the
 mock with a 300 ms delay before the full card. Not yet tried in Grid 3.
 
-Why Option 1 "showed the email" earlier: Grid 3 had `Muse (3)` from before grid3-web-grids PR 52, where Option 1
-pressed the card's details toggle.
+Why Option 1 "showed the email" earlier: `Muse (3)` in Grid 3 already had the PR 52 fix (checked in the
+saved grid set). Its first Option press only pressed Review, which opens the card with the email. A second press
+was needed. One press now opens Review and acts.
 
 ## Read options in the headphones (2026-11-12)
 
