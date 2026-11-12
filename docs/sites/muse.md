@@ -135,6 +135,22 @@ First check:
 - Checked: New side chat, Select chat and Chats on the signed-in page in Chrome 2026-11-12. The approval cells
   passed against the mock only. They are untested on a real approval card, and untested in Grid 3.
 
+## Up, Down and Select (2026-11-12, later)
+
+Operator asked for an up and down selector in place of Option 1 to 3. Home 8,4 is Up, 9,4 is Down, 8,5 is Select,
+and 0,3 (was Select chat) is Select too. Up and Down move an orange outline over the choices and say the outlined
+one in the headphones: the approval card's buttons while a request waits, else the newest message's options.
+Select presses what was moved last: an option, a chat (Prev and Next chat) or an item (More's Prev and Next item).
+On a "More choices" button Select opens its menu, and its entries then take its place in the list.
+
+One press: if only the short "A task needs review" card is up, Read options, Up and Down press Review. Their
+headphone text is worked out when Grid 3 asks for it at `WebBrowser.NextElement`, after the cell's wait, so the
+same press says the request or the first button. Read options waits 2 s for this, Up and Down 1 s. Tested on the
+mock with a 300 ms delay before the full card. Not yet tried in Grid 3.
+
+Why Option 1 "showed the email" earlier: Grid 3 had `Muse (3)` from before grid3-web-grids PR 52, where Option 1
+pressed the card's details toggle.
+
 ## Read options in the headphones (2026-11-12)
 
 Home's Read options cell runs `Muse/Options/Read_Headphones`, a 1 s wait and `WebBrowser.NextElement`, the same
