@@ -18,17 +18,55 @@ static class Grid3Click
     [DllImport("user32.dll")] static extern bool SetProcessDpiAwarenessContext(IntPtr context);
     [DllImport("user32.dll")] static extern bool GetCursorPos(out Point point);
     [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+    [StructLayout(LayoutKind.Sequential)] struct Rect { public int Left, Top, Right, Bottom; }
+    delegate bool EnumProc(IntPtr window, IntPtr data);
+    [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc proc, IntPtr data);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr window);
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr window, out Rect rect);
+    [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr window, int index);
+    [DllImport("user32.dll")] static extern bool ScreenToClient(IntPtr window, ref Point point);
     [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(Point point);
+    [DllImport("user32.dll")] static extern IntPtr ChildWindowFromPointEx(IntPtr parent, Point point, uint flags);
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window, out uint pid);
     [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint count, Input[] inputs, int size);
 
-    const int Move = 1, LeftDown = 2, LeftUp = 4;
+    const int Move = 1, LeftDown = 2, LeftUp = 4, ExStyle = -20, ExTransparent = 0x20;
+    const uint SkipInvisibleAndTransparent = 0x1 | 0x4;
 
-    static string Owner(Point point)
+    static string ProcessOf(IntPtr window)
     {
         uint pid;
-        GetWindowThreadProcessId(WindowFromPoint(point), out pid);
+        GetWindowThreadProcessId(window, out pid);
         try { return Process.GetProcessById((int)pid).ProcessName; } catch (ArgumentException) { return ""; }
+    }
+
+    // The process that gets a click at this point: the top window there that is not click-through
+    // (WS_EX_TRANSPARENT overlays, such as a screen-control overlay, pass clicks on), then its deepest child.
+    // A child from another process (Grid 3's web browser, msedgewebview2) counts as that process.
+    static string Owner(Point point)
+    {
+        IntPtr top = IntPtr.Zero;
+        EnumWindows((window, data) =>
+        {
+            Rect r;
+            if (!IsWindowVisible(window) || (GetWindowLong(window, ExStyle) & ExTransparent) != 0 || !GetWindowRect(window, out r)) return true;
+            if (point.X < r.Left || point.X >= r.Right || point.Y < r.Top || point.Y >= r.Bottom) return true;
+            top = window;
+            return false;
+        }, IntPtr.Zero);
+        if (top == IntPtr.Zero) return "";
+        IntPtr deepest = top;
+        while (true)
+        {
+            Point local = point;
+            ScreenToClient(deepest, ref local);
+            IntPtr child = ChildWindowFromPointEx(deepest, local, SkipInvisibleAndTransparent);
+            if (child == IntPtr.Zero || child == deepest) break;
+            deepest = child;
+        }
+        // Never click into a web page (it could press Send): the browser's render window is msedgewebview2.
+        string atPoint = ProcessOf(WindowFromPoint(point));
+        return atPoint == "msedgewebview2" ? atPoint : ProcessOf(deepest);
     }
 
     static uint Send(params int[] flags)
