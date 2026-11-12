@@ -2,7 +2,7 @@
 // Grid 3's own device volume cells (ComputerControl.DeviceVolume) change only the Windows default device.
 // Usage: device-volume.exe "<part of the device name>" <+10 | -10 | mute>
 //        device-volume.exe status   (logs each device: volume, mute, default, and the apps that play on it)
-// The name match ignores case and repeated spaces ("USB AUDIO CODEC" matches "USB AUDIO  CODEC").
+// The name match ignores case and repeated spaces ("USB SPEAKER" matches "Speakers (USB  SPEAKER)").
 // Build with the C# compiler that ships with Windows: tools\install-device-volume.ps1
 using System;
 using System.Diagnostics;
