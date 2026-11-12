@@ -111,11 +111,15 @@
   window.addApproval = ({ primary, more = [], deny = ['Deny'], title = 'Muse needs approval' }) => {
     const card = document.createElement('div'); card.dataset.testid = 'hatch-inline-approval-card';
     card.setAttribute('role', 'group'); card.setAttribute('aria-label', title);
+    // As on the real card (2026-11-12): a header with a details toggle (div, role button), then the email preview.
+    const head = document.createElement('div'); head.dataset.testid = 'approval-panel-header';
+    head.innerHTML = '<div role="button" aria-expanded="true">This task comes from a side chat. Hide details</div>';
     const body = document.createElement('div'); body.textContent = 'Send email to Pat. Subject: Lunch. See you at noon.';
+    body.dataset.testid = 'hatch-approval-request-preview';
     const button = (text, aria) => { const b = document.createElement('button'); b.textContent = aria ? '' : text; if (aria) b.setAttribute('aria-label', aria);
       b.onclick = () => { window.decisions.push(text); card.remove(); }; return b; };
     const first = button(primary); first.dataset.hatchApprovalPrimaryAction = 'true';
-    card.append(body, first);
+    card.append(head, body, first);
     if (more.length) {
       const m = document.createElement('button'); m.setAttribute('aria-label', 'More allow options'); m.setAttribute('aria-expanded', 'false');
       m.onclick = () => setTimeout(() => {
