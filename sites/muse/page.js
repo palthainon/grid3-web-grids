@@ -333,31 +333,36 @@
     (await waitFor(() => all('[role="menuitem"]').find((m) => /^Settings/.test(m.innerText.trim()))))?.click();
   }
 
-  // Approvals: Muse asks before some actions, such as sending an email, with a card
-  // [data-testid="hatch-inline-approval-card"] (role group, aria-label "Muse needs approval"). Chat stays paused
-  // until it is answered. The card's labels come from Muse and can grant standing permission ("Always allow",
-  // "Allow for this task", "Allow all ..."), so only the one-time "Allow once" or a plain "Allow" is ever
-  // pressed, from the primary button or the "More allow options" menu. Read from Muse's code 2026-11-12.
-  const ONCE = ['allow once', 'allow'];
-  const approvalCard = () => all('[data-testid="hatch-inline-approval-card"]').pop();
+  // Approvals (docs/sites/muse.md). Muse first shows a short card above the message box, "A task needs review"
+  // with a Review button ([data-hatch-background-approval-surface], seen 2026-11-12). Review opens the full card.
+  // Muse sets the full card's button labels per request, such as "Send", "Always allow for this recipient" and
+  // "Don't send" (operator, 2026-11-12). Read options says the request and each button in order; Option 1 to 3
+  // press button 1 to 3. A "More allow options" menu button counts as "More choices"; once it is open, its
+  // entries take its place in the list.
+  const CARD = '[data-testid="hatch-inline-approval-card"]';
+  const SUMMARY = '[data-hatch-background-approval-surface]';
+  const approvalCard = () => all(CARD).filter((c) => !c.matches(SUMMARY)).pop();
+  // The short card can sit behind the message box, so it is found without the visible test.
+  const approvalSummary = () => document.querySelector(CARD + SUMMARY);
   // Muse's avatar is labelled "Muse, needs approval" while a request waits that may not be on screen.
   const approvalWaiting = () => !!document.querySelector('[aria-label$=", needs approval"]');
   const textOf = (el) => clean(el.innerText || label(el));
-  const findOnce = (els) => { for (const want of ONCE) { const b = els.find((e) => textOf(e).toLowerCase() === want); if (b) return b; } return null; };
+  const NOT_A_CHOICE = /^(review|view and edit message|edit|view|show more|show less|copy)$/i;
 
-  function allowOnce(card) {
-    const now = findOnce(all('button', card));
-    if (now) { now.click(); return 'Allowed once'; }
-    const more = all('button[aria-label="More allow options"]', card)[0];
-    if (!more) return 'No allow once choice. Ask for help.';
-    more.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-    more.click();
-    waitFor(() => findOnce(all('[role="menuitem"]'))).then((item) => {
-      if (item) { item.click(); window.grid3Alert?.banner('Allowed once'); return; }
-      escape(document.activeElement || document.body);
-      window.grid3Alert?.banner('No allow once choice. Ask for help.');
-    });
-    return 'Allow once';
+  function choices(card) {
+    const preview = card.querySelector('[data-testid="hatch-approval-request-preview"]');
+    const list = [];
+    for (const b of all('button, [role="button"]', card)) {
+      if ((preview && preview.contains(b)) || !textOf(b) || NOT_A_CHOICE.test(textOf(b))) continue;
+      if (label(b) === 'More allow options') {
+        const menu = b.getAttribute('aria-expanded') === 'true' && openMenu();
+        if (menu) list.push(...all('[role="menuitem"], [role="menuitemradio"]', menu).map((e) => ({ el: e, name: textOf(e) })));
+        else list.push({ el: b, name: 'More choices', more: true });
+        continue;
+      }
+      list.push({ el: b, name: textOf(b) });
+    }
+    return list;
   }
 
   // The request (an email's recipient, subject and text), without the card's button labels.
@@ -368,12 +373,26 @@
     return parts.join(' ').slice(0, 1500) || 'No request text';
   }
 
-  function deny(card) {
-    const buttons = all('button', card);
-    const b = buttons.find((e) => /^deny$/i.test(textOf(e))) || buttons.find((e) => /^deny\b/i.test(textOf(e)));
-    if (!b) return 'No deny choice. Ask for help.';
-    b.click();
-    return 'Denied';
+  function openReview() {
+    const review = approvalSummary()?.querySelector('button');
+    if (!review) return false;
+    review.click();
+    return true;
+  }
+
+  function readApproval(card) {
+    const words = requestText(card).split(' ');
+    const request = words.slice(0, 30).join(' ').replace(/[.\s]+$/, '') + (words.length > 30 ? ' ...' : '');
+    const list = choices(card).map((c, i) => `${i + 1}, ${c.name}.`).join(' ');
+    return `${card.getAttribute('aria-label') || 'Muse needs approval'}. ${request}. ${list || 'No choices found. Ask for help.'}`;
+  }
+
+  function chooseApproval(card, n) {
+    const choice = choices(card)[n - 1];
+    if (!choice) return `No choice ${n}`;
+    if (choice.more) { choice.el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); choice.el.click(); return 'More choices. Press Read options.'; }
+    choice.el.click();
+    return choice.name;
   }
 
   // Options: clickable items in the newest Muse message (or just after it), other than the message toolbar.
@@ -393,7 +412,8 @@
   }
   function chooseOption(n) {
     const card = approvalCard();
-    if (card) return n === 1 ? allowOnce(card) : n === 2 ? deny(card) : requestText(card);
+    if (card) return chooseApproval(card, n);
+    if (openReview()) return 'A task needs review. Opening it. Press Read options.';
     const option = options()[n - 1];
     if (!option) return `No option ${n}`;
     const text = clean(option.innerText || label(option));
@@ -420,7 +440,8 @@
     'Chats/Select': () => selectChat(),
     'Options/Read': () => {
       const card = approvalCard();
-      if (card) return `${card.getAttribute('aria-label') || 'Muse needs approval'}. 1, Allow once. 2, Deny. 3, Read the request.`;
+      if (card) return readApproval(card);
+      if (openReview()) return 'A task needs review. Opening it. Press Read options again.';
       if (approvalWaiting() && !musePanel()) { togglePanel(); return 'Muse needs approval. The Muse panel is open. Press Read options again.'; }
       const list = options().map((o, i) => `${i + 1}, ${clean(o.innerText || label(o))}.`); return list.length ? list.join(' ') : 'No options'; },
     'Options/Option_1': () => chooseOption(1),
@@ -471,7 +492,7 @@
   if (window.grid3Alert && !window.__grid3ApprovalWatch) {
     let last = null;
     window.__grid3ApprovalWatch = setInterval(() => {
-      const card = approvalCard() || document.querySelector('[aria-label$=", needs approval"]');
+      const card = approvalCard() || approvalSummary() || document.querySelector('[aria-label$=", needs approval"]');
       if (card && card !== last) { window.__grid3_alerts = (window.__grid3_alerts || 0) + 1; window.grid3Alert.chime(); window.grid3Alert.banner('Muse needs your approval'); }
       last = card;
     }, 1500);
