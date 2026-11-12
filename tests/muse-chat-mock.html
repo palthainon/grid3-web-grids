@@ -27,7 +27,7 @@
   <div data-testid="hatch-nav-system-item-6964656173" aria-label="Ideas" onclick="go('/ideas')">i</div>
   <div data-testid="hatch-nav-system-item-676f616c73" aria-label="Goals" onclick="go('/goals')">g</div>
   <div data-testid="hatch-nav-system-item-6c696272617279" aria-label="Library" onclick="go('/library/artifacts')">l</div>
-  <button data-testid="hatch-dock-more" aria-label="Settings" onclick="openMore()">m</button>
+  <button data-testid="hatch-dock-more" aria-label="Settings" aria-haspopup="menu" onclick="openMore()">m</button>
 </div>
 <div id="page"></div>
 <div id="surface" data-testid="hatch-side-chats-panel-sliding-surface">
@@ -60,6 +60,9 @@
       const r = document.createElement('div'); r.setAttribute('role', 'button'); r.dataset.testid = 'hatch-thread-row';
       r.textContent = name; if (sub) { const s = document.createElement('div'); s.textContent = sub; r.appendChild(s); }
       if (name === current) r.setAttribute('aria-current', 'page');
+      // As on the real page: More thread actions shows only on hover, but a click still works.
+      const more = document.createElement('button'); more.setAttribute('aria-label', 'More thread actions'); more.style.display = 'none';
+      more.onclick = (e) => { e.stopPropagation(); window.threadActions = (window.threadActions || []).concat(name); }; r.appendChild(more);
       r.onclick = () => { window.opened.push(name); current = name; draw(); };
       nav.appendChild(r);
     }
@@ -127,7 +130,7 @@
   document.getElementById('avatar').onclick = () => {
     if (document.getElementById('panel')) return;
     const a = document.createElement('aside'); a.id = 'panel';
-    a.innerHTML = '<button data-testid="hatch-status-panel-close" aria-label="Close panel">×</button>Avatar';
+    a.innerHTML = '<button data-testid="hatch-status-panel-close" aria-label="Close panel">×</button>Avatar<div><button aria-label="Activity" aria-pressed="true"></button><button aria-label="Approvals" aria-pressed="false"></button><button>Send this email in Gmail</button></div>';
     a.querySelector('button').onclick = () => a.remove();
     document.body.appendChild(a);
   };
@@ -162,7 +165,8 @@
   }
   function openMore() {
     const menu = el(`<div role="menu"><div role="menuitem">Keyboard shortcuts</div><div role="menuitem">Settings Ctrl+,</div></div>`);
-    menu.lastChild.onclick = () => { menu.remove(); document.body.appendChild(track(el(`<div role="dialog"><button>General</button><button>Connectors</button><button>Log out</button><button aria-label="Close" onclick="this.parentElement.remove()">x</button></div>`))); };
+    menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') menu.remove(); });
+    menu.lastChild.onclick = () => { menu.remove(); document.body.appendChild(track(el(`<div role="dialog"><button>General</button><button>Connectors</button><button>Log out</button><button aria-label="Close" onclick="this.parentElement.remove()">x</button><section><button aria-pressed="false">Light</button><button aria-pressed="true">Dark</button><label><input type="radio" name="ask" checked>Always ask</label><label><input type="radio" name="ask">Ask for some actions</label><button>Reset Muse</button><button>Allow</button><button>Reset to defaults</button></section></div>`))); };
     document.body.appendChild(menu);
   }
 </script>
