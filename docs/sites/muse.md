@@ -9,7 +9,7 @@ What `sites/muse/page.js` relies on. Seen on the signed-in page on 2026-11-06 in
 |---|---|---|
 | Message box | `textarea[aria-label="Message"]` | No Send button while it is empty (seen 2026-11-05) |
 | Message list | `[role="log"][aria-label="Chat messages"]` | Scrolls inside a parent element, so Grid 3's `WebBrowser.ScrollDown` does nothing |
-| One message | the highest ancestor of a `button[aria-label="Reply"]` that holds only that Reply button | 7 found on the main chat. Each also has `Copy response`, `React`, `More options` |
+| One message | a top-level `[data-message-item]` in the log, with `data-message-role` `user` or `assistant` | Seen 2026-11-16 in VoiceGrid's WebView2 on the signed-in page: 39 items, but the toolbar (`Reply`, `React`, `Share`, `More options`) showed on one or two messages only, so the old rule (the highest ancestor of a `button[aria-label="Reply"]`) found one message. That rule stays as the fallback for the test mock |
 | Options in a message | plain `button` elements inside the newest message, text such as "Add both" | Muse also writes them in the text ("Option A ...") |
 | "Keep chat panel visible" | menu item `[role="menuitemcheckbox"]` in the menu of `[data-testid="hatch-side-chats-options"]` (open it with pointerdown then click) | On: the chat panel is docked open and **no Chats button exists**, so nothing else closes it. It was on in the operator's Chrome on 2026-11-06 |
 | Chats button | `[data-testid="hatch-chat-switcher-trigger"]`, text "Chats Open chat and side chats" | Only while "Keep chat panel visible" is off. A click toggles the chat panel |
@@ -74,7 +74,7 @@ The user mostly stays in Main chat, so messages come first.
 
 New-message alert (2026-11-06): web notifications cannot reach Grid 3 (no WebView2 permission handler in
 Grid 3, no push in WebView2). Instead page.js uses `templates/alert.js` and checks the open chat every 1.5 s. When a new Muse reply appears
-at the bottom (Muse's replies have a `React` button; the user's own start "You:" and have `Copy response`), it
+at the bottom (Muse's replies are message items with `data-message-role="assistant"`, 2026-11-16; before that, a `React` button), it
 plays a two-note chime and shows a small orange "New message from Muse" banner for 8 s. Older messages loading
 above, or a change of chat, do not alert. Only while the Muse grid set is open. Seen and heard in Grid 3 on
 2026-11-06. For alerts outside Muse, Muse would have to email or text the user (Grid 3 alerts
