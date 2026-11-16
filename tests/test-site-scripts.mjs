@@ -180,6 +180,31 @@ try {
     await grid3(page, 'Muse/Chats/Toggle');
     await grid3(page, 'Muse/Panel/Toggle');
     check('Panel/Toggle closes it', await page.locator('#panel').count() === 0);
+
+    // Muse's message items (read on the signed-in page 2026-11-16): each message has data-message-item and
+    // data-message-role, and the toolbar (Reply, React, Share) shows on one message only.
+    const items = await context.newPage();
+    await items.goto('https://muse.ai/');
+    await items.evaluate(() => {
+      const msgs = [...document.querySelectorAll('#log .msg')];
+      msgs.forEach((m, i) => {
+        m.setAttribute('data-message-item', '');
+        m.setAttribute('data-message-role', m.querySelector('[data-hatch-assistant-message-body]') ? 'assistant' : 'user');
+        if (i < msgs.length - 1) m.querySelectorAll('button[aria-label]').forEach((b) => b.remove());
+      });
+      const share = document.createElement('button'); share.setAttribute('aria-label', 'Share'); share.textContent = 'Share';
+      msgs[msgs.length - 1].appendChild(share);
+    });
+    await grid3(items, 'Muse/Home/Read_Selected_Message');
+    await grid3(items, 'Muse/Home/Previous_Message');
+    await grid3(items, 'Muse/Home/Previous_Message');
+    check('message items: Prev msg moves with one Reply button on the page', (await grid3(items, 'Muse/Home/Read_Selected_Message')) === 'Muse: answer 10');
+    await grid3(items, 'Muse/Home/Next_Message');
+    check('message items: Next msg moves back down', (await grid3(items, 'Muse/Home/Read_Selected_Message')) === 'You: question 11');
+    await grid3(items, 'Muse/Home/Preview_Selected_Message_Headphones');
+    const itemHeard = await items.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b[b.length - 1]._grid_getHotSpotAuditoryFeedbackText(); });
+    check('message items: the preview names the sender from data-message-role', itemHeard.startsWith('You, 8:11 AM. question 11'), itemHeard);
+    check('message items: Share is not an option', (await grid3(items, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
     await context.close();
   }
 
