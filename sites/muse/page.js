@@ -12,10 +12,17 @@
   const clean = (text) => text.replace(/\s+/g, ' ').trim();
   const SELECTED = 'grid3-selected';
 
-  // Each message has one Reply button. Its message is the highest ancestor that holds only that Reply button.
+  // Muse marks each message with data-message-item, and data-message-role "user" or "assistant". Its toolbar
+  // (Reply, React, Share, More options) shows on one message at a time, so a search for Reply buttons found one
+  // message only (39 items, 1 Reply button, read on the signed-in page 2026-11-16).
+  const topItems = (log) => [...log.querySelectorAll('[data-message-item]')].filter((e) => !e.parentElement.closest('[data-message-item]'));
+  // Fallback for a page without message items (the test mock): each message has one Reply button, and its
+  // message is the highest ancestor that holds only that Reply button.
   function messages() {
     const log = document.querySelector('[role="log"][aria-label="Chat messages"]');
     if (!log) return [];
+    const items = topItems(log);
+    if (items.length) return items;
     return [...log.querySelectorAll('button[aria-label="Reply"]')].map((reply) => {
       let box = reply;
       while (box.parentElement && box.parentElement !== log && box.parentElement.querySelectorAll('button[aria-label="Reply"]').length === 1) box = box.parentElement;
@@ -58,7 +65,8 @@
   }
   function preview(message) {
     if (!message) return 'No message';
-    const sender = message.querySelector('[data-hatch-assistant-message-body]') ? 'Muse' : 'You';
+    const role = message.getAttribute('data-message-role');
+    const sender = role ? (role === 'assistant' ? 'Muse' : 'You') : message.querySelector('[data-hatch-assistant-message-body]') ? 'Muse' : 'You';
     const words = clean(message.innerText || '').replace(/^(You|Muse):\s*/, '').split(' ');
     const start = words.slice(0, 12).join(' ') + (words.length > 12 ? ' ...' : '');
     return [sender, sentAt(message)].filter(Boolean).join(', ') + '. ' + start;
@@ -400,7 +408,7 @@
   }
 
   // Options: clickable items in the newest Muse message (or just after it), other than the message toolbar.
-  const TOOLBAR = new Set(['Reply', 'Copy response', 'React', 'More options']);
+  const TOOLBAR = new Set(['Reply', 'Copy response', 'React', 'Share', 'More options']);
   function options() {
     const log = document.querySelector('[role="log"][aria-label="Chat messages"]');
     if (!log) return [];
@@ -546,13 +554,15 @@
   }
 
   // New-message alert (templates/alert.js, included by site.psd1): a chime and a small banner when a new Muse
-  // reply appears at the bottom of the open chat. Muse's replies have a React button; the user's own messages
-  // start "You:" and have Copy response instead (read 2026-11-06).
+  // reply appears at the bottom of the open chat. Muse's replies are message items with data-message-role
+  // "assistant" (read 2026-11-16). The React button is the fallback: it now shows on one message at a time.
   window.grid3Alert?.watch({
     text: 'New message from Muse',
     newest: () => {
       const log = document.querySelector('[role="log"][aria-label="Chat messages"]');
       if (!log) return undefined;
+      const replies = topItems(log).filter((m) => m.getAttribute('data-message-role') === 'assistant');
+      if (replies.length) return replies[replies.length - 1];
       const reacts = log.querySelectorAll('button[aria-label="React"]');
       return reacts[reacts.length - 1] || null;
     },
