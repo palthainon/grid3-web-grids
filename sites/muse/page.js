@@ -368,10 +368,13 @@
       if (skip.some((s) => s.contains(b)) || !textOf(b) || NOT_A_CHOICE.test(textOf(b))) continue;
       if (label(b) === 'More allow options') {
         const menu = b.getAttribute('aria-expanded') === 'true' && openMenu();
-        if (menu) list.push(...all('[role="menuitem"], [role="menuitemradio"]', menu).map((e) => ({ el: e, name: textOf(e) })));
+        if (menu) list.push(...all('[role="menuitem"], [role="menuitemradio"]', menu).map((e) => ({ el: e, name: textOf(e) })).filter((c) => !BLOCKED.test(c.name)));
         else list.push({ el: b, name: 'More choices', more: true });
         continue;
       }
+      // Standing permission ("Always allow for this recipient") is never a choice: one time only (operator,
+      // 2026-11-19). BLOCKED is the same list More's items leave out.
+      if (BLOCKED.test(textOf(b))) continue;
       list.push({ el: b, name: textOf(b) });
     }
     return list;
@@ -415,8 +418,15 @@
     const found = all('button, a[href], [role="button"], [role="link"]', log)
       .filter((e) => !TOOLBAR.has(e.getAttribute('aria-label') || '') && clean(e.innerText || label(e)));
     const list = messages();
-    for (const message of list.slice(-2).reverse()) {
-      const mine = found.filter((e) => message.contains(e) || (message.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING));
+    // The outlined message's options first (Prev and Next msg, or a mouse click), so Up and Down can leave the
+    // newest message (operator, 2026-11-19: Next option stayed on a browser preview message). Only the options
+    // of that message and what Muse draws before the next message. With none there, the newest message, as before.
+    const at = selectedIndex(list);
+    const order = at >= 0 && at < list.length - 1 ? [list[at]] : [];
+    for (const message of [...order, ...list.slice(-2).reverse()]) {
+      const next = list[list.indexOf(message) + 1];
+      const mine = found.filter((e) => (message.contains(e) || (message.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING))
+        && (message !== order[0] || !next || (next.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_PRECEDING)));
       const outer = mine.filter((e) => !mine.some((o) => o !== e && o.contains(e)));
       if (outer.length) return outer;
     }
@@ -551,6 +561,24 @@
     let node = root;
     for (const part of parts.slice(0, -1)) node = node[part] = node[part] || {};
     node[parts[parts.length - 1]] = () => { try { return run(); } catch (e) { return 'Muse command failed'; } };
+  }
+
+  // A mouse click on a message outlines it, so Prev and Next msg go on from the message a helper picked, not
+  // from the last outlined one (operator, 2026-11-19: after a click on another message, Prev and Next msg went
+  // back to the browser preview message). Only real clicks (isTrusted): grid3HeadphoneSay's own click is not
+  // one, and is outside the log anyway. One listener per page (page.js runs again with every cell).
+  if (!window.__grid3MessageClick) {
+    window.__grid3MessageClick = true;
+    document.addEventListener('click', (e) => {
+      if (!e.isTrusted) return;
+      const log = e.target.closest?.('[role="log"][aria-label="Chat messages"]');
+      if (!log) return;
+      const list = messages();
+      const i = list.findIndex((m) => m.contains(e.target));
+      if (i < 0) return;
+      list.forEach((m) => m.classList.remove(SELECTED));
+      list[i].classList.add(SELECTED);
+    }, true);
   }
 
   // New-message alert (templates/alert.js, included by site.psd1): a chime and a small banner when a new Muse

@@ -145,7 +145,9 @@ try {
     check('Select on More choices opens the menu', (await grid3(page, 'Muse/Home/Select')) === 'More choices. Press Down.');
     await page.waitForTimeout(300);
     const menuSaid = [await say('Muse/Options/Down_Headphones'), await say('Muse/Options/Down_Headphones'), await say('Muse/Options/Down_Headphones')];
-    check('with the menu open, Down walks Send, the menu entry, Don\'t send', JSON.stringify(menuSaid) === JSON.stringify(['Send', 'Always allow for this recipient', "Don't send"]), JSON.stringify(menuSaid));
+    // "Always allow for this recipient" gives standing permission, so it is never a choice (operator, 2026-11-19).
+    check('with the menu open, Down walks Send and Don\'t send, never Always allow', JSON.stringify(menuSaid) === JSON.stringify(['Send', "Don't send", 'Send']), JSON.stringify(menuSaid));
+    await say('Muse/Options/Down_Headphones');
     check('Select presses Don\'t send', (await grid3(page, 'Muse/Home/Select')) === "Don't send" && JSON.stringify(await decisions()) === '["Don\'t send"]');
     await page.evaluate(() => document.querySelectorAll('[role="menu"]').forEach((m) => m.remove()));
     await page.evaluate((o) => window.addSummary(o), email);
@@ -205,6 +207,31 @@ try {
     const itemHeard = await items.evaluate(() => { const b = document.querySelectorAll('#grid3-headphone button'); return b[b.length - 1]._grid_getHotSpotAuditoryFeedbackText(); });
     check('message items: the preview names the sender from data-message-role', itemHeard.startsWith('You, 8:11 AM. question 11'), itemHeard);
     check('message items: Share is not an option', (await grid3(items, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
+    // A message in the middle with its own button, like Muse's browser preview message (operator, 2026-11-19:
+    // Prev and Next msg and Next option kept going back to it). A mouse click outlines the clicked message, Prev
+    // and Next msg go on from it, and the options are the outlined message's own.
+    const preview = await items.evaluate(() => {
+      const msgs = [...document.querySelectorAll('#log .msg')];
+      const m = msgs.filter((x) => x.getAttribute('data-message-role') === 'assistant').at(-3);
+      const b = document.createElement('button'); b.setAttribute('aria-label', 'Open browser preview'); b.textContent = 'Open browser preview';
+      m.appendChild(b);
+      m.id = 'preview-msg';
+      return msgs.indexOf(m);
+    });
+    const readSel = () => grid3(items, 'Muse/Home/Read_Selected_Message');
+    const msgText = (i) => items.evaluate((n) => document.querySelectorAll('#log .msg')[n].innerText.replace(/\s+/g, ' ').trim(), preview + i);
+    await items.click('#preview-msg', { position: { x: 5, y: 5 } });
+    check('a mouse click outlines the clicked message', (await readSel()) === await msgText(0), await readSel());
+    check('Options/Read gives the outlined message\'s own options', (await grid3(items, 'Muse/Options/Read')) === '1, Open browser preview.');
+    await grid3(items, 'Muse/Home/Previous_Message');
+    check('Prev msg goes on from the clicked message', (await readSel()) === await msgText(-1));
+    await grid3(items, 'Muse/Home/Next_Message');
+    await grid3(items, 'Muse/Home/Next_Message');
+    check('Next msg moves past the browser preview message', (await readSel()) === await msgText(1));
+    check('Next option leaves it: a message with no options gives the newest message\'s options', (await grid3(items, 'Muse/Options/Read')) === '1, Tell me more. 2, Give me a summary. 3, Start over.');
+    await items.click('#preview-msg', { position: { x: 5, y: 5 } });
+    await items.click('#log .msg:last-child', { position: { x: 5, y: 5 } });
+    check('a click on another message moves the outline away from it', (await items.locator('.grid3-selected').count()) === 1 && (await items.locator('#preview-msg.grid3-selected').count()) === 0);
     await context.close();
   }
 

@@ -181,6 +181,25 @@ message's group, and the first 12 words: "Muse, 8:42 AM. Good morning, Philip. .
 before the message, so a message later in a group says the group's time. Checked on the real page in Chrome
 (the text only). Not yet heard in Grid 3.
 
+## Stuck on the browser preview message (2026-11-19)
+
+Reported by the operator in Grid 3: after an Audible test, Muse's chat held a message with an "Open browser
+preview" button (`aria-label="Open browser preview"`, inside the message's `[data-message-item]`). Prev and Next
+msg kept going back to that message, even after a mouse click on another message, and Next option (Down) stayed
+on its controls. Muse showed a Gmail approval card at the same time. By the next check the button and the card
+were gone, so the message was not seen drawn again.
+
+- A mouse click inside a message now outlines it (a capturing click listener on the page, real clicks only, so
+  `grid3HeadphoneSay`'s own click does not count). Prev and Next msg go on from the clicked message.
+- Read options, Up and Down use the outlined message's options first: its own controls and what Muse draws
+  before the next message. If it has none, or nothing is outlined, the newest message's options, as before.
+  An approval card still comes first.
+- "Always allow ..." and the other standing permissions in `BLOCKED` are no longer approval choices, so Up, Down,
+  Select and Option 1 to 3 cannot reach them. This replaces the 2026-11-12 wish to hear "Always allow for this
+  recipient" as a choice (operator, 2026-11-19). Muse's "Allow once" stays reachable through More choices.
+- Checked: `node tests/test-site-scripts.mjs muse` with a browser preview message in the mock. Not yet seen in
+  Grid 3 or on the real page.
+
 ## Every control, and how the grid reaches it (2026-11-12)
 
 Inventory read on the signed-in page in Chrome 2026-11-12. More's Prev, Next, Read and Open item walk whatever
