@@ -33,6 +33,10 @@ work:
 
 ## Status
 
+- 2026-11-19: Muse: a mouse click outlines the clicked message, and Read options, Up and Down use the outlined
+  message's options first, so Prev and Next msg and Next option no longer stick on a browser preview message.
+  "Always allow ..." is no longer an approval choice. Tested on the mock page; gridset rebuild and Grid 3 check pending.
+
 - 2026-11-12: Added tools/device-volume.cs and the Volume page in Headphone Test (item 8), and grid3-click with
   the grid3-press skill so agents can press Grid 3 cells on a test machine (item 9). Grid 3's log path and the
   AppData trap for packaged apps are in docs/grid3-internals.md.
